@@ -1,7 +1,19 @@
 import axios from 'axios'
 
+// CodeServer proxy: /codeserver/proxy/5000 -> localhost:5000
+// Detect if running behind CodeServer proxy
+function getBaseURL() {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL
+  const { origin, pathname } = window.location
+  // If accessed via CodeServer proxy (e.g., /codeserver/proxy/5173/)
+  // then API is at /codeserver/proxy/5000/api
+  const csMatch = pathname.match(/^(\/codeserver\/proxy\/)(\d+)/)
+  if (csMatch) return `${origin}${csMatch[1]}5000/api`
+  return '/api'
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: getBaseURL(),
   headers: {
     'Content-Type': 'application/json',
   },

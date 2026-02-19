@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from config import Config
 from models import db
@@ -8,8 +8,8 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # CORS for Vue.js dev server
-    CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173", "http://localhost:3000"]}})
+    # CORS - allow CodeServer proxy and local dev
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
 
     db.init_app(app)
 
@@ -22,6 +22,11 @@ def create_app():
     app.register_blueprint(development_bp, url_prefix="/api/development")
     app.register_blueprint(dashboard_bp, url_prefix="/api/dashboard")
 
+    # Health check endpoint for testing connectivity
+    @app.route("/")
+    def index():
+        return jsonify({"status": "ok", "message": "MT Dashboard API is running"})
+
     # Create tables
     with app.app_context():
         import models.scorecard  # noqa: F401
@@ -33,4 +38,5 @@ def create_app():
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(debug=True, port=5000)
+    # host=0.0.0.0 -> container/pod icinden proxy erisimi icin gerekli
+    app.run(debug=True, host="0.0.0.0", port=5000)
