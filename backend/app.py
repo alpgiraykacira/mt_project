@@ -12,7 +12,7 @@ def create_app():
     # CORS - configurable via CORS_ORIGINS env variable
     cors_origins = os.getenv(
         "CORS_ORIGINS",
-        "https://scorecard_dashboard_agk.onrender.com"
+        "https://mt-project-lnq7.onrender.com"
     ).split(",")
     CORS(app, origins=cors_origins)
 
