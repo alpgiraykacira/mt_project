@@ -11,6 +11,6 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: CORS_ORIGINS
-        value: https://scorecard_dashboard_agk.onrender.com
+        value: https://mt-project-lnq7.onrender.com
       - key: PYTHON_VERSION
         value: 3.11.0
