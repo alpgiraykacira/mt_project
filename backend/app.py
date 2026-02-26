@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 from config import Config
@@ -8,8 +9,12 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # CORS - allow CodeServer proxy and local dev
-    CORS(app, origins=["https://scorecard_dashboard_agk.onrender.com"])
+    # CORS - configurable via CORS_ORIGINS env variable
+    cors_origins = os.getenv(
+        "CORS_ORIGINS",
+        "https://scorecard_dashboard_agk.onrender.com"
+    ).split(",")
+    CORS(app, origins=cors_origins)
 
     db.init_app(app)
 
@@ -27,11 +32,16 @@ def create_app():
     def index():
         return jsonify({"status": "ok", "message": "MT Dashboard API is running"})
 
-    # Create tables
+    # Create tables and auto-seed if empty
     with app.app_context():
         import models.scorecard  # noqa: F401
         import models.development  # noqa: F401
         db.create_all()
+
+        from models.scorecard import ModelInventory
+        if ModelInventory.query.count() == 0:
+            from seed_data import seed_db
+            seed_db()
 
     return app
 
