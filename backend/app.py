@@ -27,10 +27,14 @@ def create_app():
     app.register_blueprint(development_bp, url_prefix="/api/development")
     app.register_blueprint(dashboard_bp, url_prefix="/api/dashboard")
 
-    # Health check endpoint for testing connectivity
+    # Health check endpoints
     @app.route("/")
     def index():
         return jsonify({"status": "ok", "message": "MT Dashboard API is running"})
+
+    @app.route("/health")
+    def health():
+        return jsonify({"status": "ok"})
 
     # Create tables and auto-seed if empty
     with app.app_context():
