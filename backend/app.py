@@ -9,7 +9,7 @@ def create_app():
     app.config.from_object(Config)
 
     # CORS - allow CodeServer proxy and local dev
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    CORS(app, origins=["https://scorecard_dashboard_agk.onrender.com"])
 
     db.init_app(app)
 
@@ -39,4 +39,4 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
     # host=0.0.0.0 -> container/pod icinden proxy erisimi icin gerekli
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
