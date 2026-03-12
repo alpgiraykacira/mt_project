@@ -14,13 +14,16 @@ def list_models():
     query = ModelInventory.query
 
     # Filters
-    model_type = request.args.get("model_type")
+    scorecard_category = request.args.get("scorecard_category")
+    product_type = request.args.get("product_type")
     status = request.args.get("status")
     owner = request.args.get("owner")
     search = request.args.get("search")
 
-    if model_type:
-        query = query.filter(ModelInventory.model_type == model_type)
+    if scorecard_category:
+        query = query.filter(ModelInventory.scorecard_category == scorecard_category)
+    if product_type:
+        query = query.filter(ModelInventory.product_type == product_type)
     if status:
         query = query.filter(ModelInventory.status == status)
     if owner:
@@ -38,8 +41,8 @@ def create_model():
     data = request.get_json()
     model = ModelInventory(
         model_name=data["model_name"],
-        model_type=data["model_type"],
-        segment=data.get("segment"),
+        scorecard_category=data["scorecard_category"],
+        product_type=data.get("product_type"),
         development_period_start=_parse_date(data.get("development_period_start")),
         development_period_end=_parse_date(data.get("development_period_end")),
         development_table=data.get("development_table"),
@@ -74,7 +77,7 @@ def update_model(model_id):
     model = db.get_or_404(ModelInventory, model_id)
     data = request.get_json()
 
-    for field in ["model_name", "model_type", "segment", "development_table",
+    for field in ["model_name", "scorecard_category", "product_type", "development_table",
                    "target_variable", "gini_development", "gini_validation",
                    "gini_current", "final_score", "status", "owner", "description"]:
         if field in data:

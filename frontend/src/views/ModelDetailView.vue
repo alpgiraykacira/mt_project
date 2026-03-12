@@ -26,7 +26,7 @@ const toast = useToast()
 
 const modelId = computed(() => Number(route.params.id))
 const model = ref(null)
-const loading = ref(true)
+const initialLoading = ref(true)
 
 // Technical Guide
 const showTechDialog = ref(false)
@@ -68,7 +68,6 @@ const chartOptions = {
 }
 
 async function loadModel() {
-  loading.value = true
   try {
     const res = await modelsApi.get(modelId.value)
     model.value = res.data
@@ -76,7 +75,7 @@ async function loadModel() {
     toast.add({ severity: 'error', summary: 'Hata', detail: 'Model yüklenemedi', life: 3000 })
     router.push('/models')
   } finally {
-    loading.value = false
+    initialLoading.value = false
   }
 }
 
@@ -159,7 +158,7 @@ onMounted(loadModel)
 </script>
 
 <template>
-  <div v-if="!loading && model">
+  <div v-if="!initialLoading && model">
     <div class="page-header">
       <div>
         <button class="btn btn-secondary btn-sm" @click="router.push('/models')" style="margin-bottom: 8px;">
@@ -174,8 +173,8 @@ onMounted(loadModel)
       <!-- Model Summary -->
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="stat-label">Model Türü</div>
-          <div class="stat-value" style="font-size: 1.4rem;">{{ model.model_type }}</div>
+          <div class="stat-label">Kategori</div>
+          <div class="stat-value" style="font-size: 1.4rem;">{{ model.scorecard_category }}</div>
         </div>
         <div class="stat-card info">
           <div class="stat-label">Gini (Geliştirme)</div>
@@ -195,7 +194,7 @@ onMounted(loadModel)
       <div class="card" style="margin-bottom: 24px;">
         <div class="card-body">
           <div class="form-grid">
-            <div class="form-group"><label>Segment</label><span>{{ model.segment || '-' }}</span></div>
+            <div class="form-group"><label>Ürün Tipi</label><span>{{ model.product_type || '-' }}</span></div>
             <div class="form-group"><label>Owner</label><span>{{ model.owner || '-' }}</span></div>
             <div class="form-group"><label>Target Değişken</label><span>{{ model.target_variable || '-' }}</span></div>
             <div class="form-group"><label>Geliştirme Tablosu</label><span>{{ model.development_table || '-' }}</span></div>
@@ -388,7 +387,7 @@ onMounted(loadModel)
       </template>
     </Dialog>
   </div>
-  <div v-else class="page-body">
+  <div v-else-if="initialLoading" class="page-body">
     <div class="empty-state">
       <i class="pi pi-spin pi-spinner" style="font-size: 2rem;"></i>
       <p>Yükleniyor...</p>

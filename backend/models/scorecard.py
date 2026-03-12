@@ -8,8 +8,8 @@ class ModelInventory(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     model_name = db.Column(db.String(200), nullable=False)
-    model_type = db.Column(db.String(100), nullable=False)  # PD, LGD, EAD, etc.
-    segment = db.Column(db.String(200))
+    scorecard_category = db.Column(db.String(100), nullable=False)  # Başvuru, Davranış
+    product_type = db.Column(db.String(100))  # KMH, Konut, Kredi Kartı, Oto, Tüketici
     development_period_start = db.Column(db.Date)
     development_period_end = db.Column(db.Date)
     development_table = db.Column(db.String(200))
@@ -34,8 +34,8 @@ class ModelInventory(db.Model):
         return {
             "id": self.id,
             "model_name": self.model_name,
-            "model_type": self.model_type,
-            "segment": self.segment,
+            "scorecard_category": self.scorecard_category,
+            "product_type": self.product_type,
             "development_period_start": self.development_period_start.isoformat() if self.development_period_start else None,
             "development_period_end": self.development_period_end.isoformat() if self.development_period_end else None,
             "development_table": self.development_table,

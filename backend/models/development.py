@@ -8,8 +8,8 @@ class DevelopmentProject(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     project_name = db.Column(db.String(300), nullable=False)
-    model_type = db.Column(db.String(100))  # PD, LGD, EAD, etc.
-    segment = db.Column(db.String(200))
+    scorecard_category = db.Column(db.String(100))  # Başvuru, Davranış
+    product_type = db.Column(db.String(100))  # KMH, Konut, Kredi Kartı, Oto, Tüketici
     owner = db.Column(db.String(200), nullable=False)
     status = db.Column(db.String(50), default="in_progress")  # in_progress, completed, on_hold, cancelled
     priority = db.Column(db.String(20), default="medium")  # low, medium, high, critical
@@ -29,8 +29,8 @@ class DevelopmentProject(db.Model):
         data = {
             "id": self.id,
             "project_name": self.project_name,
-            "model_type": self.model_type,
-            "segment": self.segment,
+            "scorecard_category": self.scorecard_category,
+            "product_type": self.product_type,
             "owner": self.owner,
             "status": self.status,
             "priority": self.priority,
@@ -43,14 +43,19 @@ class DevelopmentProject(db.Model):
             "progress": self._calculate_progress(),
         }
         if include_stages:
-            data["stages"] = [s.to_dict() for s in self.stages]
+            # Only top-level stages; children are nested inside each stage's to_dict
+            data["stages"] = [s.to_dict() for s in self.stages if s.parent_id is None]
         return data
 
     def _calculate_progress(self):
         if not self.stages:
             return 0
-        completed = sum(1 for s in self.stages if s.status == "completed")
-        return round((completed / len(self.stages)) * 100)
+        # Only count top-level stages (no parent) for progress
+        top_stages = [s for s in self.stages if s.parent_id is None]
+        if not top_stages:
+            return 0
+        completed = sum(1 for s in top_stages if s.status == "completed")
+        return round((completed / len(top_stages)) * 100)
 
 
 class DevelopmentStage(db.Model):
@@ -59,6 +64,8 @@ class DevelopmentStage(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey("development_project.id"), nullable=False)
+    parent_id = db.Column(db.Integer, db.ForeignKey("development_stage.id"), nullable=True)
+    stage_code = db.Column(db.String(20))  # "1", "3.1", "3.1.2" etc.
     stage_name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
     status = db.Column(db.String(50), default="pending")  # pending, in_progress, completed, blocked
@@ -69,13 +76,18 @@ class DevelopmentStage(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
+    children = db.relationship("DevelopmentStage", backref=db.backref("parent", remote_side="DevelopmentStage.id"),
+                               lazy=True, cascade="all, delete-orphan",
+                               order_by="DevelopmentStage.order_index")
     tasks = db.relationship("StageTask", backref="stage", lazy=True,
                             cascade="all, delete-orphan", order_by="StageTask.order_index")
 
-    def to_dict(self):
-        return {
+    def to_dict(self, include_children=True):
+        data = {
             "id": self.id,
             "project_id": self.project_id,
+            "parent_id": self.parent_id,
+            "stage_code": self.stage_code,
             "stage_name": self.stage_name,
             "description": self.description,
             "status": self.status,
@@ -86,6 +98,9 @@ class DevelopmentStage(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "tasks": [t.to_dict() for t in self.tasks],
         }
+        if include_children:
+            data["children"] = [c.to_dict(include_children=True) for c in self.children]
+        return data
 
 
 class StageTask(db.Model):

@@ -11,12 +11,12 @@ def seed_db():
 
     # ── Mevcut Modeller ──
     m1 = ModelInventory(
-        model_name="Retail PD Scorecard v3.2",
-        model_type="PD",
-        segment="Bireysel - Genel Amaçlı",
+        model_name="Tüketici Başvuru Skorkartı v3.2",
+        scorecard_category="Başvuru",
+        product_type="Tüketici",
         development_period_start=date(2023, 1, 15),
         development_period_end=date(2023, 6, 30),
-        development_table="RETAIL_DEV_202301",
+        development_table="TUKETICI_APP_202301",
         target_variable="default_flag_12m",
         gini_development=0.62,
         gini_validation=0.58,
@@ -24,15 +24,15 @@ def seed_db():
         final_score=0.87,
         status="active",
         owner="Alp Giray Kaçıra",
-        description="Bireysel müşteriler için 12 aylık temerrüt olasılığı modeli.",
+        description="Tüketici kredisi başvuru skorkartı - 12 aylık temerrüt olasılığı modeli.",
     )
     m2 = ModelInventory(
-        model_name="SME LGD Model v2.0",
-        model_type="LGD",
-        segment="KOBİ",
+        model_name="KMH Davranış Skorkartı v2.0",
+        scorecard_category="Davranış",
+        product_type="KMH",
         development_period_start=date(2022, 7, 1),
         development_period_end=date(2022, 12, 31),
-        development_table="SME_LGD_DEV_202207",
+        development_table="KMH_BEH_DEV_202207",
         target_variable="loss_rate",
         gini_development=0.48,
         gini_validation=0.44,
@@ -40,12 +40,12 @@ def seed_db():
         final_score=0.78,
         status="active",
         owner="Ahmet Yılmaz",
-        description="KOBİ segmenti için kayıp oranı tahmin modeli.",
+        description="KMH (Kredili Mevduat Hesabı) davranışsal skor modeli.",
     )
     m3 = ModelInventory(
-        model_name="Credit Card Behavioural Score",
-        model_type="Behavioural",
-        segment="Bireysel - Kredi Kartı",
+        model_name="Kredi Kartı Davranış Skorkartı v1.5",
+        scorecard_category="Davranış",
+        product_type="Kredi Kartı",
         development_period_start=date(2024, 1, 10),
         development_period_end=date(2024, 5, 15),
         development_table="CC_BEH_DEV_202401",
@@ -59,12 +59,12 @@ def seed_db():
         description="Kredi kartı müşterileri için davranışsal skor modeli.",
     )
     m4 = ModelInventory(
-        model_name="Mortgage Application Score v1.0",
-        model_type="Application",
-        segment="Bireysel - Konut",
+        model_name="Konut Başvuru Skorkartı v1.0",
+        scorecard_category="Başvuru",
+        product_type="Konut",
         development_period_start=date(2021, 3, 1),
         development_period_end=date(2021, 9, 30),
-        development_table="MORTGAGE_APP_DEV_2021",
+        development_table="KONUT_APP_DEV_2021",
         target_variable="default_flag_24m",
         gini_development=0.55,
         gini_validation=0.51,
@@ -75,13 +75,13 @@ def seed_db():
         description="Konut kredisi başvuru skoru - performans düşüşü nedeniyle inceleniyor.",
     )
     m5 = ModelInventory(
-        model_name="Commercial EAD Model v1.5",
-        model_type="EAD",
-        segment="Ticari",
+        model_name="Oto Başvuru Skorkartı v1.2",
+        scorecard_category="Başvuru",
+        product_type="Oto",
         development_period_start=date(2020, 6, 1),
         development_period_end=date(2020, 12, 31),
-        development_table="COMM_EAD_DEV_2020",
-        target_variable="ead_ratio",
+        development_table="OTO_APP_DEV_2020",
+        target_variable="default_flag_12m",
         gini_development=0.41,
         gini_validation=0.38,
         gini_current=0.35,
@@ -100,7 +100,7 @@ def seed_db():
                 section_title="Veri Çekme Sorgusu",
                 section_type="query",
                 content="Ana geliştirme veri seti için kullanılan sorgu.",
-                query_code=f"SELECT * FROM {model.development_table}\nWHERE observation_date BETWEEN '2023-01-01' AND '2023-06-30'\n  AND segment = '{model.segment}';",
+                query_code=f"SELECT * FROM {model.development_table}\nWHERE observation_date BETWEEN '2023-01-01' AND '2023-06-30'\n  AND product_type = '{model.product_type}';",
                 order_index=0,
             ),
             TechnicalGuide(
@@ -167,91 +167,115 @@ def seed_db():
 
     # ── Geliştirme Projeleri ──
     p1 = DevelopmentProject(
-        project_name="Retail PD v4.0 Geliştirme",
-        model_type="PD",
-        segment="Bireysel - Genel Amaçlı",
+        project_name="Tüketici Başvuru Skorkartı v4.0 Geliştirme",
+        scorecard_category="Başvuru",
+        product_type="Tüketici",
         owner="Alp Giray Kaçıra",
         status="in_progress",
         priority="high",
         start_date=date(2025, 9, 1),
         target_end_date=date(2026, 3, 31),
-        description="Mevcut PD v3.2 modelinin yenilenmesi. Yeni değişkenler ve ML teknikleri eklenecek.",
+        description="Mevcut tüketici başvuru skorkartının yenilenmesi. Yeni değişkenler ve ML teknikleri eklenecek.",
     )
     p2 = DevelopmentProject(
-        project_name="KOBİ Behavioural Score",
-        model_type="Behavioural",
-        segment="KOBİ",
+        project_name="KMH Davranış Skorkartı v3.0",
+        scorecard_category="Davranış",
+        product_type="KMH",
         owner="Ahmet Yılmaz",
         status="in_progress",
         priority="medium",
         start_date=date(2025, 11, 1),
         target_end_date=date(2026, 5, 31),
-        description="KOBİ segmenti için yeni davranışsal skor modeli geliştirmesi.",
+        description="KMH segmenti için yeni davranışsal skor modeli geliştirmesi.",
     )
     p3 = DevelopmentProject(
-        project_name="Mortgage PD Model Yenileme",
-        model_type="PD",
-        segment="Bireysel - Konut",
+        project_name="Konut Başvuru Skorkartı Yenileme",
+        scorecard_category="Başvuru",
+        product_type="Konut",
         owner="Elif Demir",
         status="in_progress",
         priority="critical",
         start_date=date(2025, 7, 1),
         target_end_date=date(2026, 1, 31),
-        description="Performans düşüşü olan konut kredisi PD modelinin yenilenmesi.",
+        description="Performans düşüşü olan konut kredisi başvuru skorkartının yenilenmesi.",
     )
     db.session.add_all([p1, p2, p3])
     db.session.flush()
 
-    # ── Aşamalar ve Görevler ──
-    stages_config = [
-        ("Veri Hazırlama", "Veri çekme, temizleme ve birleştirme"),
-        ("Keşifsel Veri Analizi", "Değişken analizi, korelasyon, dağılım incelemeleri"),
-        ("Değişken Seçimi", "WOE/IV analizi, değişken eleme"),
-        ("Model Geliştirme", "Model eğitimi, parametre optimizasyonu"),
-        ("Model Validasyonu", "Out-of-sample test, stabilite analizi"),
-        ("Dokümantasyon", "Technical guide, skorkart dokümanları hazırlama"),
-        ("Onay Süreci", "Komite sunumu ve onay"),
-        ("Implementasyon", "Canlıya alma ve entegrasyon"),
-    ]
-
-    # p1: Aşama 4'te (model geliştirme) - ilk 3 tamamlandı
-    for i, (name, desc) in enumerate(stages_config):
-        status = "completed" if i < 3 else ("in_progress" if i == 3 else "pending")
-        deadline = date(2025, 10 + i if 10 + i <= 12 else i - 2, 15) if i < 6 else date(2026, i - 4, 28)
-        stage = DevelopmentStage(
-            project_id=p1.id, stage_name=name, description=desc,
-            status=status, order_index=i, deadline=deadline,
+    # ── Aşamalar (hiyerarşik) ──
+    def add_stage(project_id, code, name, desc="", order=0, parent=None, status="pending"):
+        s = DevelopmentStage(
+            project_id=project_id, parent_id=parent,
+            stage_code=code, stage_name=name, description=desc,
+            status=status, order_index=order,
         )
-        db.session.add(stage)
+        db.session.add(s)
         db.session.flush()
-        if i == 3:
-            tasks = [
-                StageTask(stage_id=stage.id, task_description="Logistic regression baseline model", is_completed=True, order_index=0),
-                StageTask(stage_id=stage.id, task_description="XGBoost model denemesi", is_completed=True, order_index=1),
-                StageTask(stage_id=stage.id, task_description="Ensemble model karşılaştırması", is_completed=False, order_index=2),
-                StageTask(stage_id=stage.id, task_description="Final model seçimi ve kalibrasyon", is_completed=False, order_index=3),
-            ]
-            db.session.add_all(tasks)
+        return s.id
 
-    # p2: Aşama 2'de (EDA) - ilk 1 tamamlandı
-    for i, (name, desc) in enumerate(stages_config):
-        status = "completed" if i < 1 else ("in_progress" if i == 1 else "pending")
-        stage = DevelopmentStage(
-            project_id=p2.id, stage_name=name, description=desc,
-            status=status, order_index=i,
-            deadline=date(2025, 12 + i if 12 + i <= 12 else i, 15) if i < 4 else date(2026, i - 1, 28),
-        )
-        db.session.add(stage)
+    # p1: Aşama 3'te - ilk 2 tamamlandı
+    add_stage(p1.id, "1", "Geliştirme Dönemi & Performans Period & Hedef Değişken & Sampling Yapma & İstisna Kararı", order=0, status="completed")
+    add_stage(p1.id, "2", "Data kaynaklarının belirlenmesi", order=1, status="completed")
+    s1_3 = add_stage(p1.id, "3", "Segmentasyon Kararı & Model Geliştirme", order=2, status="in_progress")
+    s1_3_1 = add_stage(p1.id, "3.1", "Mevcut Değişkenler", order=0, parent=s1_3, status="in_progress")
+    add_stage(p1.id, "3.1.0", "Referans Set & Default", order=0, parent=s1_3_1, status="completed")
+    kkb_id = add_stage(p1.id, "3.1.1", "KKB", order=1, parent=s1_3_1, status="in_progress")
+    add_stage(p1.id, "3.1.2", "Banka içi Datamartlar", order=2, parent=s1_3_1, status="pending")
+    add_stage(p1.id, "3.1.3", "G6, BBE, IMS", order=3, parent=s1_3_1, status="pending")
+    s1_3_2 = add_stage(p1.id, "3.2", "Yeni Değişken Keşif", order=1, parent=s1_3, status="pending")
+    add_stage(p1.id, "3.2.1", "Hesap Hareketleri", order=0, parent=s1_3_2)
+    add_stage(p1.id, "3.2.2", "Kredi Kartı hareketleri", order=1, parent=s1_3_2)
+    add_stage(p1.id, "3.2.3", "Telekom verileri", order=2, parent=s1_3_2)
+    add_stage(p1.id, "4", "Ağırlıklandırma", order=3)
+    add_stage(p1.id, "5", "Backscoring (Geçmiş & Güncel)", order=4)
+    add_stage(p1.id, "6", "Kalibrasyon", order=5)
+    add_stage(p1.id, "7", "Dokümantasyon", order=6)
+    add_stage(p1.id, "8", "Sunum", order=7)
 
-    # p3: Aşama 6'da (Dokümantasyon) - ilk 5 tamamlandı
-    for i, (name, desc) in enumerate(stages_config):
-        status = "completed" if i < 5 else ("in_progress" if i == 5 else "pending")
-        stage = DevelopmentStage(
-            project_id=p3.id, stage_name=name, description=desc,
-            status=status, order_index=i,
-            deadline=date(2025, 8 + i if 8 + i <= 12 else i - 4, 15),
-        )
-        db.session.add(stage)
+    # Tasks for p1 KKB stage
+    db.session.add_all([
+        StageTask(stage_id=kkb_id, task_description="KKB ham veri çekimi", is_completed=True, order_index=0),
+        StageTask(stage_id=kkb_id, task_description="KKB değişken türetimi", is_completed=False, order_index=1),
+        StageTask(stage_id=kkb_id, task_description="KKB WOE/IV analizi", is_completed=False, order_index=2),
+    ])
+
+    # p2: Aşama 2'de - ilk 1 tamamlandı
+    add_stage(p2.id, "1", "Geliştirme Dönemi & Performans Period & Hedef Değişken & Sampling Yapma & İstisna Kararı", order=0, status="completed")
+    add_stage(p2.id, "2", "Data kaynaklarının belirlenmesi", order=1, status="in_progress")
+    s2_3 = add_stage(p2.id, "3", "Segmentasyon Kararı & Model Geliştirme", order=2)
+    s2_3_1 = add_stage(p2.id, "3.1", "Mevcut Değişkenler", order=0, parent=s2_3)
+    add_stage(p2.id, "3.1.0", "Referans Set & Default", order=0, parent=s2_3_1)
+    add_stage(p2.id, "3.1.1", "KKB", order=1, parent=s2_3_1)
+    add_stage(p2.id, "3.1.2", "Banka içi Datamartlar", order=2, parent=s2_3_1)
+    add_stage(p2.id, "3.1.3", "G6, BBE, IMS", order=3, parent=s2_3_1)
+    s2_3_2 = add_stage(p2.id, "3.2", "Yeni Değişken Keşif", order=1, parent=s2_3)
+    add_stage(p2.id, "3.2.1", "Hesap Hareketleri", order=0, parent=s2_3_2)
+    add_stage(p2.id, "3.2.2", "Kredi Kartı hareketleri", order=1, parent=s2_3_2)
+    add_stage(p2.id, "3.2.3", "Telekom verileri", order=2, parent=s2_3_2)
+    add_stage(p2.id, "4", "Ağırlıklandırma", order=3)
+    add_stage(p2.id, "5", "Backscoring (Geçmiş & Güncel)", order=4)
+    add_stage(p2.id, "6", "Kalibrasyon", order=5)
+    add_stage(p2.id, "7", "Dokümantasyon", order=6)
+    add_stage(p2.id, "8", "Sunum", order=7)
+
+    # p3: Aşama 6'da - ilk 5 aşama tamamlandı
+    add_stage(p3.id, "1", "Geliştirme Dönemi & Performans Period & Hedef Değişken & Sampling Yapma & İstisna Kararı", order=0, status="completed")
+    add_stage(p3.id, "2", "Data kaynaklarının belirlenmesi", order=1, status="completed")
+    s3_3 = add_stage(p3.id, "3", "Segmentasyon Kararı & Model Geliştirme", order=2, status="completed")
+    s3_3_1 = add_stage(p3.id, "3.1", "Mevcut Değişkenler", order=0, parent=s3_3, status="completed")
+    add_stage(p3.id, "3.1.0", "Referans Set & Default", order=0, parent=s3_3_1, status="completed")
+    add_stage(p3.id, "3.1.1", "KKB", order=1, parent=s3_3_1, status="completed")
+    add_stage(p3.id, "3.1.2", "Banka içi Datamartlar", order=2, parent=s3_3_1, status="completed")
+    add_stage(p3.id, "3.1.3", "G6, BBE, IMS", order=3, parent=s3_3_1, status="completed")
+    s3_3_2 = add_stage(p3.id, "3.2", "Yeni Değişken Keşif", order=1, parent=s3_3, status="completed")
+    add_stage(p3.id, "3.2.1", "Hesap Hareketleri", order=0, parent=s3_3_2, status="completed")
+    add_stage(p3.id, "3.2.2", "Kredi Kartı hareketleri", order=1, parent=s3_3_2, status="completed")
+    add_stage(p3.id, "3.2.3", "Telekom verileri", order=2, parent=s3_3_2, status="completed")
+    add_stage(p3.id, "4", "Ağırlıklandırma", order=3, status="completed")
+    add_stage(p3.id, "5", "Backscoring (Geçmiş & Güncel)", order=4, status="completed")
+    add_stage(p3.id, "6", "Kalibrasyon", order=5, status="in_progress")
+    add_stage(p3.id, "7", "Dokümantasyon", order=6)
+    add_stage(p3.id, "8", "Sunum", order=7)
 
     db.session.commit()
     print("Seed data loaded successfully!")
