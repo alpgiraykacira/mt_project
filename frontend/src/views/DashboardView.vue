@@ -13,7 +13,7 @@ const summary = ref({ models: {}, development: {} })
 const giniData = ref([])
 const modelTypesData = ref([])
 const progressData = ref([])
-const loading = ref(true)
+const initialLoading = ref(true)
 
 const giniChartData = ref({ labels: [], datasets: [] })
 const typeChartData = ref({ labels: [], datasets: [] })
@@ -60,7 +60,7 @@ onMounted(async () => {
       ],
     }
 
-    // Model types doughnut
+    // Scorecard category doughnut (Başvuru / Davranış)
     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
     typeChartData.value = {
       labels: modelTypesData.value.map(t => t.type),
@@ -72,7 +72,7 @@ onMounted(async () => {
   } catch (err) {
     console.error('Dashboard load error:', err)
   } finally {
-    loading.value = false
+    initialLoading.value = false
   }
 })
 </script>
@@ -126,7 +126,7 @@ onMounted(async () => {
 
         <div class="card">
           <div class="card-header">
-            <h3>Model Türü Dağılımı</h3>
+            <h3>Skorkart Kategori Dağılımı</h3>
           </div>
           <div class="card-body" style="height: 300px;">
             <Doughnut

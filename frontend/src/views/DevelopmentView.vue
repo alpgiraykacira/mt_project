@@ -14,7 +14,7 @@ const router = useRouter()
 const toast = useToast()
 
 const projects = ref([])
-const loading = ref(true)
+const initialLoading = ref(true)
 const showDialog = ref(false)
 
 const filterOwner = ref(null)
@@ -23,15 +23,16 @@ const owners = ref([])
 
 const statusOptions = ['in_progress', 'completed', 'on_hold', 'cancelled']
 const priorityOptions = ['low', 'medium', 'high', 'critical']
-const modelTypes = ['PD', 'LGD', 'EAD', 'Behavioural', 'Application', 'Other']
+const scorecardCategories = ['Başvuru', 'Davranış']
+const productTypes = ['KMH', 'Konut', 'Kredi Kartı', 'Oto', 'Tüketici']
 
 const form = ref(getEmptyForm())
 
 function getEmptyForm() {
   return {
     project_name: '',
-    model_type: null,
-    segment: '',
+    scorecard_category: null,
+    product_type: null,
     owner: '',
     priority: 'medium',
     start_date: null,
@@ -50,7 +51,6 @@ const filteredProjects = computed(() => {
 })
 
 async function loadProjects() {
-  loading.value = true
   try {
     const [projectsRes, ownersRes] = await Promise.all([
       developmentApi.listProjects(),
@@ -61,7 +61,7 @@ async function loadProjects() {
   } catch (err) {
     toast.add({ severity: 'error', summary: 'Hata', detail: 'Projeler yüklenemedi', life: 3000 })
   } finally {
-    loading.value = false
+    initialLoading.value = false
   }
 }
 
@@ -182,7 +182,7 @@ onMounted(loadProjects)
           <div class="card-body">
             <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #64748b; margin-bottom: 8px;">
               <span><i class="pi pi-user" style="margin-right: 4px;"></i> {{ project.owner }}</span>
-              <span v-if="project.model_type">{{ project.model_type }}</span>
+              <span v-if="project.scorecard_category">{{ project.scorecard_category }} · {{ project.product_type }}</span>
             </div>
 
             <div style="margin-bottom: 8px;">
@@ -206,7 +206,7 @@ onMounted(loadProjects)
         </div>
       </div>
 
-      <div v-else class="empty-state" style="margin-top: 48px;">
+      <div v-else-if="!initialLoading" class="empty-state" style="margin-top: 48px;">
         <i class="pi pi-briefcase"></i>
         <p>Henüz geliştirme projesi bulunmuyor</p>
         <button class="btn btn-primary" @click="openNew" style="margin-top: 16px;">
@@ -227,12 +227,12 @@ onMounted(loadProjects)
           <InputText v-model="form.owner" />
         </div>
         <div class="form-group">
-          <label>Model Türü</label>
-          <Select v-model="form.model_type" :options="modelTypes" placeholder="Seçiniz" />
+          <label>Kategori</label>
+          <Select v-model="form.scorecard_category" :options="scorecardCategories" placeholder="Seçiniz" />
         </div>
         <div class="form-group">
-          <label>Segment</label>
-          <InputText v-model="form.segment" />
+          <label>Ürün Tipi</label>
+          <Select v-model="form.product_type" :options="productTypes" placeholder="Seçiniz" />
         </div>
         <div class="form-group">
           <label>Öncelik</label>

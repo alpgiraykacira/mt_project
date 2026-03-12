@@ -16,11 +16,11 @@ const toast = useToast()
 
 const projectId = computed(() => Number(route.params.id))
 const project = ref(null)
-const loading = ref(true)
+const initialLoading = ref(true)
 
 // Stage dialog
 const showStageDialog = ref(false)
-const stageForm = ref({ stage_name: '', description: '', deadline: null, notes: '' })
+const stageForm = ref({ stage_name: '', stage_code: '', description: '', deadline: null, notes: '', parent_id: null })
 
 // Task dialog
 const showTaskDialog = ref(false)
@@ -34,9 +34,26 @@ const editForm = ref({})
 const statusOptions = ['in_progress', 'completed', 'on_hold', 'cancelled']
 const stageStatusOptions = ['pending', 'in_progress', 'completed', 'blocked']
 const priorityOptions = ['low', 'medium', 'high', 'critical']
+const scorecardCategories = ['Başvuru', 'Davranış']
+const productTypes = ['KMH', 'Konut', 'Kredi Kartı', 'Oto', 'Tüketici']
+
+// Flatten hierarchical stages into a list with depth info
+const flatStages = computed(() => {
+  if (!project.value?.stages) return []
+  const result = []
+  function walk(stages, depth) {
+    for (const stage of stages) {
+      result.push({ ...stage, depth })
+      if (stage.children?.length) {
+        walk(stage.children, depth + 1)
+      }
+    }
+  }
+  walk(project.value.stages, 0)
+  return result
+})
 
 async function loadProject() {
-  loading.value = true
   try {
     const res = await developmentApi.getProject(projectId.value)
     project.value = res.data
@@ -44,7 +61,7 @@ async function loadProject() {
     toast.add({ severity: 'error', summary: 'Hata', detail: 'Proje yüklenemedi', life: 3000 })
     router.push('/development')
   } finally {
-    loading.value = false
+    initialLoading.value = false
   }
 }
 
@@ -77,6 +94,11 @@ async function saveProject() {
 }
 
 // Stage CRUD
+function openStageDialog(parentId = null) {
+  stageForm.value = { stage_name: '', stage_code: '', description: '', deadline: null, notes: '', parent_id: parentId }
+  showStageDialog.value = true
+}
+
 async function saveStage() {
   try {
     const data = {
@@ -161,6 +183,13 @@ const statusIcon = {
   blocked: 'pi pi-exclamation-triangle',
 }
 
+const statusColor = {
+  completed: '#10b981',
+  in_progress: '#3b82f6',
+  blocked: '#ef4444',
+  pending: '#94a3b8',
+}
+
 function isOverdue(deadline) {
   if (!deadline) return false
   return new Date(deadline) < new Date()
@@ -170,7 +199,7 @@ onMounted(loadProject)
 </script>
 
 <template>
-  <div v-if="!loading && project">
+  <div v-if="!initialLoading && project">
     <div class="page-header">
       <div>
         <button class="btn btn-secondary btn-sm" @click="router.push('/development')" style="margin-bottom: 8px;">
@@ -204,9 +233,9 @@ onMounted(loadProject)
           </div>
         </div>
         <div class="stat-card success">
-          <div class="stat-label">Aşama Durumu</div>
-          <div class="stat-value" style="font-size: 1.2rem;">
-            {{ project.stages?.filter(s => s.status === 'completed').length || 0 }} / {{ project.stages?.length || 0 }}
+          <div class="stat-label">Kategori / Ürün</div>
+          <div class="stat-value" style="font-size: 1.1rem;">
+            {{ project.scorecard_category || '-' }} · {{ project.product_type || '-' }}
           </div>
         </div>
       </div>
@@ -220,35 +249,44 @@ onMounted(loadProject)
         </div>
       </div>
 
-      <!-- Stages -->
+      <!-- Stages (hierarchical, flat-rendered with indentation) -->
       <div class="card">
         <div class="card-header">
           <h3>Geliştirme Aşamaları</h3>
-          <button class="btn btn-primary btn-sm" @click="stageForm = { stage_name: '', description: '', deadline: null, notes: '' }; showStageDialog = true">
+          <button class="btn btn-primary btn-sm" @click="openStageDialog(null)">
             <i class="pi pi-plus"></i> Aşama Ekle
           </button>
         </div>
         <div class="card-body">
-          <div v-if="project.stages?.length">
+          <div v-if="flatStages.length">
             <div
-              v-for="(stage, index) in project.stages"
+              v-for="stage in flatStages"
               :key="stage.id"
-              style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 12px;"
-              :style="{ borderLeftColor: stage.status === 'completed' ? '#10b981' : stage.status === 'in_progress' ? '#3b82f6' : stage.status === 'blocked' ? '#ef4444' : '#e2e8f0', borderLeftWidth: '4px' }"
+              :style="{
+                marginLeft: (stage.depth * 28) + 'px',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                padding: stage.depth === 0 ? '16px' : '10px 14px',
+                marginBottom: '8px',
+                borderLeftColor: statusColor[stage.status] || '#e2e8f0',
+                borderLeftWidth: '4px',
+                background: stage.depth > 0 ? '#fafbfc' : 'white',
+              }"
             >
               <!-- Stage Header -->
               <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <i :class="statusIcon[stage.status]" :style="{ color: stage.status === 'completed' ? '#10b981' : stage.status === 'blocked' ? '#ef4444' : '#3b82f6' }"></i>
-                    <strong style="font-size: 0.95rem;">{{ index + 1 }}. {{ stage.stage_name }}</strong>
-                    <span class="status-badge" :class="stage.status">{{ statusLabel[stage.status] }}</span>
+                <div style="flex: 1;">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <i :class="statusIcon[stage.status]" :style="{ color: statusColor[stage.status] || '#94a3b8' }"></i>
+                    <span style="font-size: 0.8rem; color: #64748b; font-weight: 600; min-width: 36px;" v-if="stage.stage_code">{{ stage.stage_code }}</span>
+                    <strong :style="{ fontSize: stage.depth === 0 ? '0.95rem' : '0.88rem' }">{{ stage.stage_name }}</strong>
+                    <span class="status-badge" :class="stage.status" style="font-size: 0.7rem;">{{ statusLabel[stage.status] }}</span>
                   </div>
                   <p v-if="stage.description" style="font-size: 0.8rem; color: #64748b; margin-top: 4px; margin-left: 28px;">
                     {{ stage.description }}
                   </p>
                 </div>
-                <div style="display: flex; gap: 4px; align-items: center;">
+                <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
                   <span v-if="stage.deadline" style="font-size: 0.75rem; margin-right: 8px;"
                     :style="{ color: isOverdue(stage.deadline) && stage.status !== 'completed' ? '#ef4444' : '#94a3b8' }">
                     <i class="pi pi-calendar"></i> {{ stage.deadline }}
@@ -259,6 +297,9 @@ onMounted(loadProject)
                     :options="stageStatusOptions"
                     style="width: 140px; font-size: 0.8rem;"
                   />
+                  <button class="btn btn-sm btn-icon" style="background: none; color: #3b82f6; padding: 4px;" @click="openStageDialog(stage.id)" title="Alt aşama ekle">
+                    <i class="pi pi-plus" style="font-size: 0.7rem;"></i>
+                  </button>
                   <button class="btn btn-danger btn-sm btn-icon" @click="deleteStage(stage)">
                     <i class="pi pi-trash"></i>
                   </button>
@@ -271,7 +312,7 @@ onMounted(loadProject)
               </div>
 
               <!-- Tasks -->
-              <div style="margin-top: 12px; margin-left: 28px;">
+              <div v-if="stage.tasks?.length || stage.depth <= 1" style="margin-top: 8px; margin-left: 28px;">
                 <div v-for="task in stage.tasks" :key="task.id" style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                   <Checkbox :modelValue="task.is_completed" :binary="true" @update:modelValue="toggleTask(task, stage.id)" />
                   <span :style="{ textDecoration: task.is_completed ? 'line-through' : 'none', color: task.is_completed ? '#94a3b8' : '#1e293b', fontSize: '0.85rem' }">
@@ -298,7 +339,11 @@ onMounted(loadProject)
     <!-- Add Stage Dialog -->
     <Dialog v-model:visible="showStageDialog" header="Yeni Aşama Ekle" modal :style="{ width: '500px' }">
       <div class="form-grid" style="padding: 12px 0;">
-        <div class="form-group full-width">
+        <div class="form-group">
+          <label>Aşama Kodu</label>
+          <InputText v-model="stageForm.stage_code" placeholder="örn: 3.1.2" />
+        </div>
+        <div class="form-group">
           <label>Aşama Adı *</label>
           <InputText v-model="stageForm.stage_name" />
         </div>
@@ -347,6 +392,14 @@ onMounted(loadProject)
           <InputText v-model="editForm.owner" />
         </div>
         <div class="form-group">
+          <label>Kategori</label>
+          <Select v-model="editForm.scorecard_category" :options="scorecardCategories" placeholder="Seçiniz" />
+        </div>
+        <div class="form-group">
+          <label>Ürün Tipi</label>
+          <Select v-model="editForm.product_type" :options="productTypes" placeholder="Seçiniz" />
+        </div>
+        <div class="form-group">
           <label>Durum</label>
           <Select v-model="editForm.status" :options="statusOptions" />
         </div>
@@ -373,7 +426,7 @@ onMounted(loadProject)
       </template>
     </Dialog>
   </div>
-  <div v-else class="page-body">
+  <div v-else-if="initialLoading" class="page-body">
     <div class="empty-state">
       <i class="pi pi-spin pi-spinner" style="font-size: 2rem;"></i>
       <p>Yükleniyor...</p>

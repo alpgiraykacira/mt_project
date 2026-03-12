@@ -16,15 +16,17 @@ const router = useRouter()
 const toast = useToast()
 
 const models = ref([])
-const loading = ref(true)
+const initialLoading = ref(true)
 const showDialog = ref(false)
 const editMode = ref(false)
 
-const filterType = ref(null)
+const filterCategory = ref(null)
+const filterProductType = ref(null)
 const filterStatus = ref(null)
 const searchText = ref('')
 
-const modelTypes = ['PD', 'LGD', 'EAD', 'Behavioural', 'Application', 'Other']
+const scorecardCategories = ['Başvuru', 'Davranış']
+const productTypes = ['KMH', 'Konut', 'Kredi Kartı', 'Oto', 'Tüketici']
 const statusOptions = ['active', 'retired', 'under_review']
 
 const form = ref(getEmptyForm())
@@ -32,8 +34,8 @@ const form = ref(getEmptyForm())
 function getEmptyForm() {
   return {
     model_name: '',
-    model_type: null,
-    segment: '',
+    scorecard_category: null,
+    product_type: null,
     development_period_start: null,
     development_period_end: null,
     development_table: '',
@@ -50,7 +52,8 @@ function getEmptyForm() {
 
 const filteredModels = computed(() => {
   return models.value.filter(m => {
-    if (filterType.value && m.model_type !== filterType.value) return false
+    if (filterCategory.value && m.scorecard_category !== filterCategory.value) return false
+    if (filterProductType.value && m.product_type !== filterProductType.value) return false
     if (filterStatus.value && m.status !== filterStatus.value) return false
     if (searchText.value && !m.model_name.toLowerCase().includes(searchText.value.toLowerCase())) return false
     return true
@@ -58,14 +61,13 @@ const filteredModels = computed(() => {
 })
 
 async function loadModels() {
-  loading.value = true
   try {
     const res = await modelsApi.list()
     models.value = res.data
   } catch (err) {
     toast.add({ severity: 'error', summary: 'Hata', detail: 'Modeller yüklenemedi', life: 3000 })
   } finally {
-    loading.value = false
+    initialLoading.value = false
   }
 }
 
@@ -130,6 +132,11 @@ const statusLabel = {
   under_review: 'İnceleniyor',
 }
 
+const categoryLabel = {
+  'Başvuru': 'Başvuru',
+  'Davranış': 'Davranış',
+}
+
 onMounted(loadModels)
 </script>
 
@@ -147,9 +154,16 @@ onMounted(loadModels)
         <div class="card-body" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
           <InputText v-model="searchText" placeholder="Model ara..." style="width: 220px;" />
           <Select
-            v-model="filterType"
-            :options="modelTypes"
-            placeholder="Model Türü"
+            v-model="filterCategory"
+            :options="scorecardCategories"
+            placeholder="Kategori"
+            showClear
+            style="width: 160px;"
+          />
+          <Select
+            v-model="filterProductType"
+            :options="productTypes"
+            placeholder="Ürün Tipi"
             showClear
             style="width: 160px;"
           />
@@ -168,7 +182,7 @@ onMounted(loadModels)
         <div class="card-body data-table-wrapper">
           <DataTable
             :value="filteredModels"
-            :loading="loading"
+            :loading="initialLoading"
             paginator
             :rows="10"
             stripedRows
@@ -178,8 +192,8 @@ onMounted(loadModels)
             style="cursor: pointer;"
           >
             <Column field="model_name" header="Model Adı" sortable style="min-width: 200px;" />
-            <Column field="model_type" header="Tür" sortable style="width: 100px;" />
-            <Column field="segment" header="Segment" sortable style="min-width: 150px;" />
+            <Column field="scorecard_category" header="Kategori" sortable style="width: 120px;" />
+            <Column field="product_type" header="Ürün Tipi" sortable style="min-width: 120px;" />
             <Column field="owner" header="Owner" sortable style="min-width: 120px;" />
             <Column field="gini_current" header="Güncel Gini" sortable style="width: 120px;">
               <template #body="{ data }">
@@ -232,12 +246,12 @@ onMounted(loadModels)
           <InputText v-model="form.model_name" />
         </div>
         <div class="form-group">
-          <label>Model Türü *</label>
-          <Select v-model="form.model_type" :options="modelTypes" placeholder="Seçiniz" />
+          <label>Kategori *</label>
+          <Select v-model="form.scorecard_category" :options="scorecardCategories" placeholder="Seçiniz" />
         </div>
         <div class="form-group">
-          <label>Segment</label>
-          <InputText v-model="form.segment" />
+          <label>Ürün Tipi</label>
+          <Select v-model="form.product_type" :options="productTypes" placeholder="Seçiniz" />
         </div>
         <div class="form-group">
           <label>Owner</label>

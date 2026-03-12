@@ -42,11 +42,11 @@ def get_summary():
 
 @dashboard_bp.route("/model-types", methods=["GET"])
 def model_type_distribution():
-    """Model türü dağılımı."""
+    """Skorkart kategori dağılımı (Başvuru / Davranış)."""
     results = db.session.query(
-        ModelInventory.model_type,
+        ModelInventory.scorecard_category,
         func.count(ModelInventory.id)
-    ).group_by(ModelInventory.model_type).all()
+    ).group_by(ModelInventory.scorecard_category).all()
 
     return jsonify([{"type": r[0], "count": r[1]} for r in results])
 
@@ -57,7 +57,8 @@ def gini_overview():
     models = ModelInventory.query.filter_by(status="active").all()
     return jsonify([{
         "model_name": m.model_name,
-        "model_type": m.model_type,
+        "scorecard_category": m.scorecard_category,
+        "product_type": m.product_type,
         "gini_development": m.gini_development,
         "gini_validation": m.gini_validation,
         "gini_current": m.gini_current,

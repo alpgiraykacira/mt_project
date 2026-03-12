@@ -34,8 +34,8 @@ def create_project():
     data = request.get_json()
     project = DevelopmentProject(
         project_name=data["project_name"],
-        model_type=data.get("model_type"),
-        segment=data.get("segment"),
+        scorecard_category=data.get("scorecard_category"),
+        product_type=data.get("product_type"),
         owner=data["owner"],
         status=data.get("status", "in_progress"),
         priority=data.get("priority", "medium"),
@@ -67,7 +67,7 @@ def update_project(project_id):
     project = db.get_or_404(DevelopmentProject, project_id)
     data = request.get_json()
 
-    for field in ["project_name", "model_type", "segment", "owner",
+    for field in ["project_name", "scorecard_category", "product_type", "owner",
                    "status", "priority", "description"]:
         if field in data:
             setattr(project, field, data[field])
@@ -99,6 +99,8 @@ def create_stage(project_id):
     data = request.get_json()
     stage = DevelopmentStage(
         project_id=project_id,
+        parent_id=data.get("parent_id"),
+        stage_code=data.get("stage_code"),
         stage_name=data["stage_name"],
         description=data.get("description"),
         status=data.get("status", "pending"),
@@ -195,22 +197,34 @@ def _parse_date(date_str):
 
 
 def _create_default_stages(project_id):
-    """Standart model geliştirme aşamaları."""
-    default_stages = [
-        ("Veri Hazırlama", "Veri çekme, temizleme ve birleştirme"),
-        ("Keşifsel Veri Analizi", "Değişken analizi, korelasyon, dağılım incelemeleri"),
-        ("Değişken Seçimi", "WOE/IV analizi, değişken eleme"),
-        ("Model Geliştirme", "Model eğitimi, parametre optimizasyonu"),
-        ("Model Validasyonu", "Out-of-sample test, stabilite analizi"),
-        ("Dokümantasyon", "Technical guide, skorkart dokümanları hazırlama"),
-        ("Onay Süreci", "Komite sunumu ve onay"),
-        ("Implementasyon", "Canlıya alma ve entegrasyon"),
-    ]
-    for i, (name, desc) in enumerate(default_stages):
-        stage = DevelopmentStage(
-            project_id=project_id,
-            stage_name=name,
-            description=desc,
-            order_index=i,
+    """Standart model geliştirme aşamaları (hiyerarşik)."""
+    def add_stage(code, name, desc="", order=0, parent=None):
+        s = DevelopmentStage(
+            project_id=project_id, parent_id=parent,
+            stage_code=code, stage_name=name, description=desc, order_index=order,
         )
-        db.session.add(stage)
+        db.session.add(s)
+        db.session.flush()
+        return s.id
+
+    s1 = add_stage("1", "Geliştirme Dönemi & Performans Period & Hedef Değişken & Sampling Yapma & İstisna Kararı", order=0)
+    s2 = add_stage("2", "Data kaynaklarının belirlenmesi", order=1)
+    s3 = add_stage("3", "Segmentasyon Kararı & Model Geliştirme", order=2)
+
+    # 3.x sub-stages
+    s3_1 = add_stage("3.1", "Mevcut Değişkenler", order=0, parent=s3)
+    add_stage("3.1.0", "Referans Set & Default", order=0, parent=s3_1)
+    add_stage("3.1.1", "KKB", order=1, parent=s3_1)
+    add_stage("3.1.2", "Banka içi Datamartlar", order=2, parent=s3_1)
+    add_stage("3.1.3", "G6, BBE, IMS", order=3, parent=s3_1)
+
+    s3_2 = add_stage("3.2", "Yeni Değişken Keşif", order=1, parent=s3)
+    add_stage("3.2.1", "Hesap Hareketleri", order=0, parent=s3_2)
+    add_stage("3.2.2", "Kredi Kartı hareketleri", order=1, parent=s3_2)
+    add_stage("3.2.3", "Telekom verileri", order=2, parent=s3_2)
+
+    add_stage("4", "Ağırlıklandırma", order=3)
+    add_stage("5", "Backscoring (Geçmiş & Güncel)", order=4)
+    add_stage("6", "Kalibrasyon", order=5)
+    add_stage("7", "Dokümantasyon", order=6)
+    add_stage("8", "Sunum", order=7)
