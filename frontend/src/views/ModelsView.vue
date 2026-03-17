@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import DataTable from 'primevue/datatable'
@@ -16,6 +16,9 @@ const router = useRouter()
 const toast = useToast()
 
 const models = ref([])
+const totalRecords = ref(0)
+const currentPage = ref(1)
+const rowsPerPage = ref(10)
 const initialLoading = ref(true)
 const showDialog = ref(false)
 const editMode = ref(false)
@@ -50,25 +53,42 @@ function getEmptyForm() {
   }
 }
 
-const filteredModels = computed(() => {
-  return models.value.filter(m => {
-    if (filterCategory.value && m.scorecard_category !== filterCategory.value) return false
-    if (filterProductType.value && m.product_type !== filterProductType.value) return false
-    if (filterStatus.value && m.status !== filterStatus.value) return false
-    if (searchText.value && !m.model_name.toLowerCase().includes(searchText.value.toLowerCase())) return false
-    return true
-  })
-})
-
-async function loadModels() {
+async function loadModels(page = currentPage.value) {
   try {
-    const res = await modelsApi.list()
-    models.value = res.data
+    initialLoading.value = true
+    const params = {
+      page,
+      per_page: rowsPerPage.value,
+    }
+    if (filterCategory.value) params.scorecard_category = filterCategory.value
+    if (filterProductType.value) params.product_type = filterProductType.value
+    if (filterStatus.value) params.status = filterStatus.value
+    if (searchText.value) params.search = searchText.value
+
+    const res = await modelsApi.list(params)
+    // Handle both paginated {items, total} and legacy array responses
+    if (Array.isArray(res.data)) {
+      models.value = res.data
+      totalRecords.value = res.data.length
+    } else {
+      models.value = res.data.items
+      totalRecords.value = res.data.total
+    }
+    currentPage.value = page
   } catch (err) {
     toast.add({ severity: 'error', summary: 'Hata', detail: 'Modeller yüklenemedi', life: 3000 })
   } finally {
     initialLoading.value = false
   }
+}
+
+function onPageChange(event) {
+  rowsPerPage.value = event.rows
+  loadModels(Math.floor(event.first / event.rows) + 1)
+}
+
+function onFilterChange() {
+  loadModels(1)
 }
 
 function openNew() {
@@ -152,13 +172,15 @@ onMounted(loadModels)
       <!-- Filters -->
       <div class="card">
         <div class="card-body" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
-          <InputText v-model="searchText" placeholder="Model ara..." style="width: 220px;" />
+          <InputText v-model="searchText" placeholder="Model ara..." style="width: 220px;" @input="onFilterChange" />
           <Select
             v-model="filterCategory"
             :options="scorecardCategories"
             placeholder="Kategori"
             showClear
             style="width: 160px;"
+            @change="onFilterChange"
+            @clear="onFilterChange"
           />
           <Select
             v-model="filterProductType"
@@ -166,6 +188,8 @@ onMounted(loadModels)
             placeholder="Ürün Tipi"
             showClear
             style="width: 160px;"
+            @change="onFilterChange"
+            @clear="onFilterChange"
           />
           <Select
             v-model="filterStatus"
@@ -173,6 +197,8 @@ onMounted(loadModels)
             placeholder="Durum"
             showClear
             style="width: 160px;"
+            @change="onFilterChange"
+            @clear="onFilterChange"
           />
         </div>
       </div>
@@ -181,10 +207,13 @@ onMounted(loadModels)
       <div class="card">
         <div class="card-body data-table-wrapper">
           <DataTable
-            :value="filteredModels"
+            :value="models"
             :loading="initialLoading"
             paginator
-            :rows="10"
+            :rows="rowsPerPage"
+            :totalRecords="totalRecords"
+            lazy
+            @page="onPageChange"
             stripedRows
             removableSort
             :rowHover="true"

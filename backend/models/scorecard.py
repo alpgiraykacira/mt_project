@@ -8,8 +8,8 @@ class ModelInventory(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     model_name = db.Column(db.String(200), nullable=False)
-    scorecard_category = db.Column(db.String(100), nullable=False)  # Başvuru, Davranış
-    product_type = db.Column(db.String(100))  # KMH, Konut, Kredi Kartı, Oto, Tüketici
+    scorecard_category = db.Column(db.String(100), nullable=False, index=True)  # Başvuru, Davranış
+    product_type = db.Column(db.String(100), index=True)  # KMH, Konut, Kredi Kartı, Oto, Tüketici
     development_period_start = db.Column(db.Date)
     development_period_end = db.Column(db.Date)
     development_table = db.Column(db.String(200))
@@ -18,8 +18,8 @@ class ModelInventory(db.Model):
     gini_validation = db.Column(db.Float)
     gini_current = db.Column(db.Float)
     final_score = db.Column(db.Float)
-    status = db.Column(db.String(50), default="active")  # active, retired, under_review
-    owner = db.Column(db.String(200))
+    status = db.Column(db.String(50), default="active", index=True)  # active, retired, under_review
+    owner = db.Column(db.String(200), index=True)
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc),
@@ -57,7 +57,7 @@ class TechnicalGuide(db.Model):
     __tablename__ = "technical_guide"
 
     id = db.Column(db.Integer, primary_key=True)
-    model_id = db.Column(db.Integer, db.ForeignKey("model_inventory.id"), nullable=False)
+    model_id = db.Column(db.Integer, db.ForeignKey("model_inventory.id"), nullable=False, index=True)
     section_title = db.Column(db.String(300), nullable=False)
     section_type = db.Column(db.String(50))  # query, variable_calc, methodology, note
     content = db.Column(db.Text, nullable=False)
@@ -83,7 +83,7 @@ class ValidationReport(db.Model):
     __tablename__ = "validation_report"
 
     id = db.Column(db.Integer, primary_key=True)
-    model_id = db.Column(db.Integer, db.ForeignKey("model_inventory.id"), nullable=False)
+    model_id = db.Column(db.Integer, db.ForeignKey("model_inventory.id"), nullable=False, index=True)
     report_name = db.Column(db.String(300), nullable=False)
     report_type = db.Column(db.String(50), nullable=False)  # incoming, outgoing
     file_path = db.Column(db.String(500))
@@ -109,7 +109,7 @@ class GiniHistory(db.Model):
     __tablename__ = "gini_history"
 
     id = db.Column(db.Integer, primary_key=True)
-    model_id = db.Column(db.Integer, db.ForeignKey("model_inventory.id"), nullable=False)
+    model_id = db.Column(db.Integer, db.ForeignKey("model_inventory.id"), nullable=False, index=True)
     period = db.Column(db.String(20), nullable=False)  # e.g., "2025-Q1", "2025-01"
     gini_value = db.Column(db.Float, nullable=False)
     sample_size = db.Column(db.Integer)

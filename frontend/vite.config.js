@@ -12,4 +12,16 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-vue': ['vue', 'vue-router', 'pinia'],
+          'vendor-primevue': ['primevue', '@primevue/themes', 'primeicons'],
+          'vendor-charts': ['chart.js', 'vue-chartjs'],
+          'vendor-http': ['axios'],
+        },
+      },
+    },
+  },
 })

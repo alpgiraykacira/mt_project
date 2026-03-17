@@ -1,5 +1,6 @@
 from datetime import date, datetime, timezone
 from flask import Blueprint, request, jsonify
+from sqlalchemy.orm import selectinload
 from models import db
 from models.development import DevelopmentProject, DevelopmentStage, StageTask
 
@@ -8,10 +9,20 @@ development_bp = Blueprint("development", __name__)
 
 # ── Development Projects CRUD ──
 
+def _stages_loader():
+    """Reusable selectinload chain for stages -> children -> tasks."""
+    return selectinload(DevelopmentProject.stages).selectinload(
+        DevelopmentStage.children
+    ).selectinload(DevelopmentStage.tasks)
+
+
 @development_bp.route("/projects", methods=["GET"])
 def list_projects():
     """Tüm geliştirme projelerini listele."""
-    query = DevelopmentProject.query
+    query = DevelopmentProject.query.options(
+        _stages_loader(),
+        selectinload(DevelopmentProject.stages).selectinload(DevelopmentStage.tasks),
+    )
 
     owner = request.args.get("owner")
     status = request.args.get("status")
@@ -24,7 +35,22 @@ def list_projects():
     if priority:
         query = query.filter(DevelopmentProject.priority == priority)
 
-    projects = query.order_by(DevelopmentProject.updated_at.desc()).all()
+    query = query.order_by(DevelopmentProject.updated_at.desc())
+
+    # Optional pagination
+    page = request.args.get("page", type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+    if page is not None:
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+        return jsonify({
+            "items": [p.to_dict(include_stages=True) for p in pagination.items],
+            "total": pagination.total,
+            "page": pagination.page,
+            "per_page": pagination.per_page,
+            "pages": pagination.pages,
+        })
+
+    projects = query.all()
     return jsonify([p.to_dict(include_stages=True) for p in projects])
 
 
@@ -57,14 +83,20 @@ def create_project():
 @development_bp.route("/projects/<int:project_id>", methods=["GET"])
 def get_project(project_id):
     """Proje detaylarını aşamalarıyla birlikte getir."""
-    project = db.get_or_404(DevelopmentProject, project_id)
+    project = DevelopmentProject.query.options(
+        _stages_loader(),
+        selectinload(DevelopmentProject.stages).selectinload(DevelopmentStage.tasks),
+    ).get_or_404(project_id)
     return jsonify(project.to_dict(include_stages=True))
 
 
 @development_bp.route("/projects/<int:project_id>", methods=["PUT"])
 def update_project(project_id):
     """Proje bilgilerini güncelle."""
-    project = db.get_or_404(DevelopmentProject, project_id)
+    project = DevelopmentProject.query.options(
+        _stages_loader(),
+        selectinload(DevelopmentProject.stages).selectinload(DevelopmentStage.tasks),
+    ).get_or_404(project_id)
     data = request.get_json()
 
     for field in ["project_name", "scorecard_category", "product_type", "owner",

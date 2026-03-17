@@ -1,5 +1,6 @@
 from datetime import date
 from flask import Blueprint, request, jsonify
+from sqlalchemy.orm import selectinload
 from models import db
 from models.scorecard import ModelInventory, TechnicalGuide, ValidationReport, GiniHistory
 
@@ -10,7 +11,7 @@ models_bp = Blueprint("models", __name__)
 
 @models_bp.route("/", methods=["GET"])
 def list_models():
-    """Tüm modelleri listele, filtreleme destekli."""
+    """Tüm modelleri listele, filtreleme ve sayfalama destekli."""
     query = ModelInventory.query
 
     # Filters
@@ -31,8 +32,22 @@ def list_models():
     if search:
         query = query.filter(ModelInventory.model_name.ilike(f"%{search}%"))
 
-    models = query.order_by(ModelInventory.updated_at.desc()).all()
-    return jsonify([m.to_dict() for m in models])
+    query = query.order_by(ModelInventory.updated_at.desc())
+
+    # Pagination (optional: omit page param to get all results for backward compat)
+    page = request.args.get("page", type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+    if page is not None:
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+        return jsonify({
+            "items": [m.to_dict() for m in pagination.items],
+            "total": pagination.total,
+            "page": pagination.page,
+            "per_page": pagination.per_page,
+            "pages": pagination.pages,
+        })
+
+    return jsonify([m.to_dict() for m in query.all()])
 
 
 @models_bp.route("/", methods=["POST"])
@@ -63,7 +78,11 @@ def create_model():
 @models_bp.route("/<int:model_id>", methods=["GET"])
 def get_model(model_id):
     """Tek bir modelin detaylarını getir."""
-    model = db.get_or_404(ModelInventory, model_id)
+    model = ModelInventory.query.options(
+        selectinload(ModelInventory.technical_details),
+        selectinload(ModelInventory.validation_reports),
+        selectinload(ModelInventory.gini_history),
+    ).get_or_404(model_id)
     data = model.to_dict()
     data["technical_details"] = [t.to_dict() for t in model.technical_details]
     data["validation_reports"] = [v.to_dict() for v in model.validation_reports]
