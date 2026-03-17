@@ -19,12 +19,31 @@ const api = axios.create({
   },
 })
 
+// ── Simple in-memory cache with TTL for read-only endpoints ──
+const _cache = new Map()
+const CACHE_TTL_MS = 30_000  // 30 seconds
+
+function cachedGet(url) {
+  const entry = _cache.get(url)
+  if (entry && Date.now() - entry.ts < CACHE_TTL_MS) {
+    return Promise.resolve(entry.data)
+  }
+  return api.get(url).then(res => {
+    _cache.set(url, { data: res, ts: Date.now() })
+    return res
+  })
+}
+
+export function invalidateDashboardCache() {
+  _cache.clear()
+}
+
 // ── Dashboard ──
 export const dashboardApi = {
-  getSummary: () => api.get('/dashboard/summary'),
-  getModelTypes: () => api.get('/dashboard/model-types'),
-  getGiniOverview: () => api.get('/dashboard/gini-overview'),
-  getDevelopmentProgress: () => api.get('/dashboard/development-progress'),
+  getSummary: () => cachedGet('/dashboard/summary'),
+  getModelTypes: () => cachedGet('/dashboard/model-types'),
+  getGiniOverview: () => cachedGet('/dashboard/gini-overview'),
+  getDevelopmentProgress: () => cachedGet('/dashboard/development-progress'),
 }
 
 // ── Models ──

@@ -1,6 +1,7 @@
 import os
 from flask import Flask, jsonify
 from flask_cors import CORS
+from flask_compress import Compress
 from config import Config
 from models import db
 
@@ -16,6 +17,7 @@ def create_app():
     ).split(",")
     CORS(app, origins=cors_origins)
 
+    Compress(app)
     db.init_app(app)
 
     # Register blueprints

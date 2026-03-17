@@ -8,11 +8,11 @@ class DevelopmentProject(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     project_name = db.Column(db.String(300), nullable=False)
-    scorecard_category = db.Column(db.String(100))  # Başvuru, Davranış
-    product_type = db.Column(db.String(100))  # KMH, Konut, Kredi Kartı, Oto, Tüketici
-    owner = db.Column(db.String(200), nullable=False)
-    status = db.Column(db.String(50), default="in_progress")  # in_progress, completed, on_hold, cancelled
-    priority = db.Column(db.String(20), default="medium")  # low, medium, high, critical
+    scorecard_category = db.Column(db.String(100), index=True)  # Başvuru, Davranış
+    product_type = db.Column(db.String(100), index=True)  # KMH, Konut, Kredi Kartı, Oto, Tüketici
+    owner = db.Column(db.String(200), nullable=False, index=True)
+    status = db.Column(db.String(50), default="in_progress", index=True)  # in_progress, completed, on_hold, cancelled
+    priority = db.Column(db.String(20), default="medium", index=True)  # low, medium, high, critical
     start_date = db.Column(db.Date)
     target_end_date = db.Column(db.Date)
     actual_end_date = db.Column(db.Date)
@@ -63,14 +63,14 @@ class DevelopmentStage(db.Model):
     __tablename__ = "development_stage"
 
     id = db.Column(db.Integer, primary_key=True)
-    project_id = db.Column(db.Integer, db.ForeignKey("development_project.id"), nullable=False)
-    parent_id = db.Column(db.Integer, db.ForeignKey("development_stage.id"), nullable=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("development_project.id"), nullable=False, index=True)
+    parent_id = db.Column(db.Integer, db.ForeignKey("development_stage.id"), nullable=True, index=True)
     stage_code = db.Column(db.String(20))  # "1", "3.1", "3.1.2" etc.
     stage_name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
-    status = db.Column(db.String(50), default="pending")  # pending, in_progress, completed, blocked
+    status = db.Column(db.String(50), default="pending", index=True)  # pending, in_progress, completed, blocked
     order_index = db.Column(db.Integer, default=0)
-    deadline = db.Column(db.Date)
+    deadline = db.Column(db.Date, index=True)
     completed_at = db.Column(db.DateTime)
     notes = db.Column(db.Text)  # O aşamada neler yapıldı/yapılacak
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
@@ -108,7 +108,7 @@ class StageTask(db.Model):
     __tablename__ = "stage_task"
 
     id = db.Column(db.Integer, primary_key=True)
-    stage_id = db.Column(db.Integer, db.ForeignKey("development_stage.id"), nullable=False)
+    stage_id = db.Column(db.Integer, db.ForeignKey("development_stage.id"), nullable=False, index=True)
     task_description = db.Column(db.String(500), nullable=False)
     is_completed = db.Column(db.Boolean, default=False)
     order_index = db.Column(db.Integer, default=0)
