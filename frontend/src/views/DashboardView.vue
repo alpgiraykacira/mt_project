@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { Bar, Doughnut } from 'vue-chartjs'
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement,
@@ -7,12 +8,15 @@ import {
 } from 'chart.js'
 import { dashboardApi } from '../api'
 
+const router = useRouter()
+
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend)
 
 const summary = ref({ models: {}, development: {} })
 const giniData = ref([])
 const modelTypesData = ref([])
 const progressData = ref([])
+const giniAlerts = ref([])
 const initialLoading = ref(true)
 
 const giniChartData = ref({ labels: [], datasets: [] })
@@ -26,17 +30,19 @@ const chartOptions = {
 
 onMounted(async () => {
   try {
-    const [summaryRes, giniRes, typesRes, progressRes] = await Promise.all([
+    const [summaryRes, giniRes, typesRes, progressRes, alertsRes] = await Promise.all([
       dashboardApi.getSummary(),
       dashboardApi.getGiniOverview(),
       dashboardApi.getModelTypes(),
       dashboardApi.getDevelopmentProgress(),
+      dashboardApi.getGiniAlerts(),
     ])
 
     summary.value = summaryRes.data
     giniData.value = giniRes.data
     modelTypesData.value = typesRes.data
     progressData.value = progressRes.data
+    giniAlerts.value = alertsRes.data
 
     // Gini bar chart
     giniChartData.value = {
@@ -168,6 +174,70 @@ onMounted(async () => {
           <div v-else class="empty-state">
             <i class="pi pi-briefcase"></i>
             <p>Henüz aktif geliştirme projesi bulunmuyor</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gini İzleme Uyarıları -->
+      <div class="card" :style="giniAlerts.length > 0 ? 'border: 1.5px solid #fca5a5;' : ''">
+        <div class="card-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i
+              :class="giniAlerts.length > 0 ? 'pi pi-exclamation-triangle' : 'pi pi-check-circle'"
+              :style="{ color: giniAlerts.length > 0 ? '#ef4444' : '#10b981', fontSize: '1.1rem' }"
+            ></i>
+            <h3 style="margin: 0;">Yeni Model Geliştirme Sinyali</h3>
+          </div>
+          <span style="font-size: 0.78rem; color: #64748b;">
+            Son 3 ay üst üste ≥5 Gini puanı sapma (geliştirme Ginisi referans)
+          </span>
+        </div>
+        <div class="card-body">
+          <div v-if="giniAlerts.length > 0">
+            <div
+              v-for="alert in giniAlerts"
+              :key="alert.model_id"
+              class="gini-alert-row"
+              @click="router.push(`/models/${alert.model_id}`)"
+            >
+              <div class="gini-alert-header">
+                <div>
+                  <span class="gini-alert-name">{{ alert.model_name }}</span>
+                  <span class="status-badge" :class="alert.status" style="margin-left: 8px;">
+                    {{ alert.status === 'active' ? 'Aktif' : 'İnceleniyor' }}
+                  </span>
+                </div>
+                <span
+                  class="gini-alert-direction"
+                  :class="alert.direction === 'drop' ? 'drop' : 'rise'"
+                >
+                  <i :class="alert.direction === 'drop' ? 'pi pi-arrow-down' : 'pi pi-arrow-up'"></i>
+                  {{ alert.direction === 'drop' ? 'Düşüş' : 'Artış' }}
+                </span>
+              </div>
+              <div class="gini-alert-body">
+                <div class="gini-alert-ref">
+                  Geliştirme Ginisi: <strong>{{ (alert.gini_development * 100).toFixed(1) }}%</strong>
+                </div>
+                <div class="gini-alert-months">
+                  <div
+                    v-for="(period, i) in alert.last3_periods"
+                    :key="period"
+                    class="gini-alert-month"
+                  >
+                    <span class="gini-month-label">{{ period }}</span>
+                    <span class="gini-month-value">{{ (alert.last3_values[i] * 100).toFixed(1) }}%</span>
+                    <span class="gini-month-diff" :class="alert.direction">
+                      {{ alert.direction === 'drop' ? '-' : '+' }}{{ (Math.abs(alert.last3_diffs[i]) * 100).toFixed(1) }}pp
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="empty-state" style="padding: 24px 0;">
+            <i class="pi pi-check-circle" style="color: #10b981;"></i>
+            <p style="color: #10b981;">Tüm modeller stabil — Gini sapma uyarısı yok</p>
           </div>
         </div>
       </div>
