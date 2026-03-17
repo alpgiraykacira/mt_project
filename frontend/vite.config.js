@@ -17,7 +17,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vendor-vue': ['vue', 'vue-router', 'pinia'],
-          'vendor-primevue': ['primevue', '@primevue/themes', 'primeicons'],
+          'vendor-primevue': ['primevue', '@primevue/themes'],
           'vendor-charts': ['chart.js', 'vue-chartjs'],
           'vendor-http': ['axios'],
         },
