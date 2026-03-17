@@ -42,20 +42,51 @@ const reportTypes = ['incoming', 'outgoing']
 const showGiniDialog = ref(false)
 const giniForm = ref({ period: '', gini_value: null, sample_size: null, notes: '' })
 
+const _MONTHLY_RE = /^\d{4}-\d{2}$/
+
+// Son 3 aylık kaydın tümü geliştirme Ginisi'nden ≥5 puan sapıyorsa uyarı göster
+const redevelopmentAlert = computed(() => {
+  if (!model.value?.gini_history?.length || model.value.gini_development == null) return null
+  const monthly = [...model.value.gini_history]
+    .filter(g => _MONTHLY_RE.test(g.period))
+    .sort((a, b) => b.period.localeCompare(a.period))
+  if (monthly.length < 3) return null
+  const last3 = monthly.slice(0, 3)
+  const diffs = last3.map(g => model.value.gini_development - g.gini_value)
+  if (!diffs.every(d => Math.abs(d) >= 0.05)) return null
+  return {
+    direction: diffs[0] > 0 ? 'drop' : 'rise',
+    maxDiff: Math.max(...diffs.map(Math.abs)),
+  }
+})
+
 const giniChartData = computed(() => {
   if (!model.value?.gini_history?.length) return null
   const sorted = [...model.value.gini_history].sort((a, b) => a.period.localeCompare(b.period))
-  return {
-    labels: sorted.map(g => g.period),
-    datasets: [{
+  const datasets = [
+    {
       label: 'Gini Değeri',
       data: sorted.map(g => g.gini_value),
       borderColor: '#3b82f6',
       backgroundColor: 'rgba(59, 130, 246, 0.1)',
       fill: true,
       tension: 0.3,
-    }],
+      pointRadius: 3,
+    },
+  ]
+  if (model.value.gini_development != null) {
+    datasets.push({
+      label: 'Geliştirme Ginisi',
+      data: sorted.map(() => model.value.gini_development),
+      borderColor: 'rgba(239, 68, 68, 0.7)',
+      borderDash: [6, 3],
+      borderWidth: 1.5,
+      pointRadius: 0,
+      fill: false,
+      tension: 0,
+    })
   }
+  return { labels: sorted.map(g => g.period), datasets }
 })
 
 const chartOptions = {
@@ -207,6 +238,18 @@ onMounted(loadModel)
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Yeni Model Geliştirme Uyarısı -->
+      <div v-if="redevelopmentAlert" class="gini-redevelopment-alert">
+        <i class="pi pi-exclamation-triangle"></i>
+        <span>
+          <strong>Yeni model geliştirme önerilir:</strong>
+          Son 3 ay üst üste, izleme Gini'si geliştirme Gini'sinden
+          {{ redevelopmentAlert.direction === 'drop' ? 'düştü' : 'yükseldi' }}
+          (maks. sapma: {{ (redevelopmentAlert.maxDiff * 100).toFixed(1) }} puan).
+          Bu model için yenileme süreci başlatılması tavsiye edilir.
+        </span>
       </div>
 
       <!-- Tabs -->

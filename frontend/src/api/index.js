@@ -44,6 +44,7 @@ export const dashboardApi = {
   getModelTypes: () => cachedGet('/dashboard/model-types'),
   getGiniOverview: () => cachedGet('/dashboard/gini-overview'),
   getDevelopmentProgress: () => cachedGet('/dashboard/development-progress'),
+  getGiniAlerts: () => cachedGet('/dashboard/gini-alerts'),
 }
 
 // ── Models ──

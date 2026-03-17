@@ -144,26 +144,170 @@ def seed_db():
         db.session.add_all(reports)
 
     # ── Gini History ──
-    gini_data = {
-        m1.id: [
-            ("2023-Q3", 0.60), ("2023-Q4", 0.59), ("2024-Q1", 0.58),
-            ("2024-Q2", 0.57), ("2024-Q3", 0.56), ("2024-Q4", 0.55),
-            ("2025-Q1", 0.55),
-        ],
-        m2.id: [
-            ("2023-Q1", 0.46), ("2023-Q2", 0.45), ("2023-Q3", 0.44),
-            ("2023-Q4", 0.43), ("2024-Q1", 0.43), ("2024-Q2", 0.42),
-        ],
-        m3.id: [
-            ("2024-Q3", 0.66), ("2024-Q4", 0.66), ("2025-Q1", 0.65),
-        ],
-    }
-    for model_id, records in gini_data.items():
-        for period, gini_val in records:
+    # Her model için: geliştirme dönemi (quarterly), OOT (quarterly), aylık izleme
+    # Period formatları: "YYYY-QN" (quarterly), "YYYY-MM" (aylık izleme)
+    # Uyarı mekanizması sadece "YYYY-MM" formatlı kayıtlar üzerinden çalışır.
+
+    def _add_gini(model_id, records):
+        for period, gini_val, notes, sample in records:
             db.session.add(GiniHistory(
                 model_id=model_id, period=period,
-                gini_value=gini_val, sample_size=15000,
+                gini_value=gini_val, notes=notes, sample_size=sample,
             ))
+
+    # ── M1: Tüketici Başvuru v3.2 (gini_dev=0.62) ──
+    # Geliştirme: 2023-01 → 2023-06 | İzleme başlangıcı: 2023-07 | Uyarı: EVET
+    _add_gini(m1.id, [
+        # Geliştirme dönemi quarterly
+        ("2022-Q4", 0.630, "Geliştirme dönemi", 22000),
+        ("2023-Q1", 0.622, "Geliştirme dönemi", 24000),
+        # OOT validasyon
+        ("2023-Q3", 0.580, "OOT Validasyon", 19000),
+        # Aylık izleme 2023-07 → 2026-03 (trend: 0.600 → 0.552, yavaş düşüş)
+        ("2023-07", 0.600, "Aylık izleme", 14800), ("2023-08", 0.597, "Aylık izleme", 15100),
+        ("2023-09", 0.594, "Aylık izleme", 14900), ("2023-10", 0.591, "Aylık izleme", 15200),
+        ("2023-11", 0.588, "Aylık izleme", 14700), ("2023-12", 0.585, "Aylık izleme", 13900),
+        ("2024-01", 0.582, "Aylık izleme", 15300), ("2024-02", 0.579, "Aylık izleme", 14600),
+        ("2024-03", 0.576, "Aylık izleme", 15000), ("2024-04", 0.573, "Aylık izleme", 15100),
+        ("2024-05", 0.570, "Aylık izleme", 14800), ("2024-06", 0.567, "Aylık izleme", 14900),
+        ("2024-07", 0.565, "Aylık izleme", 15200), ("2024-08", 0.563, "Aylık izleme", 14700),
+        ("2024-09", 0.561, "Aylık izleme", 15000), ("2024-10", 0.560, "Aylık izleme", 15100),
+        ("2024-11", 0.559, "Aylık izleme", 14900), ("2024-12", 0.558, "Aylık izleme", 14200),
+        ("2025-01", 0.558, "Aylık izleme", 15400), ("2025-02", 0.556, "Aylık izleme", 14800),
+        ("2025-03", 0.557, "Aylık izleme", 15100), ("2025-04", 0.556, "Aylık izleme", 15200),
+        ("2025-05", 0.557, "Aylık izleme", 14900), ("2025-06", 0.558, "Aylık izleme", 15000),
+        ("2025-07", 0.557, "Aylık izleme", 15300), ("2025-08", 0.556, "Aylık izleme", 14800),
+        ("2025-09", 0.557, "Aylık izleme", 15100), ("2025-10", 0.556, "Aylık izleme", 15200),
+        ("2025-11", 0.557, "Aylık izleme", 14900), ("2025-12", 0.555, "Aylık izleme", 14300),
+        ("2026-01", 0.551, "Aylık izleme", 15100), ("2026-02", 0.558, "Aylık izleme", 14800),
+        ("2026-03", 0.552, "Aylık izleme", 15000),
+        # Son 3 ay farkları: 0.069, 0.062, 0.068 → UYARI ✓
+    ])
+
+    # ── M2: KMH Davranış v2.0 (gini_dev=0.48) ──
+    # Geliştirme: 2022-07 → 2022-12 | İzleme başlangıcı: 2023-01 | Uyarı: EVET
+    _add_gini(m2.id, [
+        # Geliştirme dönemi quarterly
+        ("2022-Q3", 0.481, "Geliştirme dönemi", 18000),
+        # OOT validasyon
+        ("2023-Q1", 0.440, "OOT Validasyon", 16000),
+        # Aylık izleme 2023-01 → 2026-03 (trend: 0.462 → 0.420, kademeli düşüş)
+        ("2023-01", 0.462, "Aylık izleme", 11200), ("2023-02", 0.460, "Aylık izleme", 10800),
+        ("2023-03", 0.458, "Aylık izleme", 11400), ("2023-04", 0.455, "Aylık izleme", 11100),
+        ("2023-05", 0.453, "Aylık izleme", 10900), ("2023-06", 0.451, "Aylık izleme", 11000),
+        ("2023-07", 0.449, "Aylık izleme", 11300), ("2023-08", 0.448, "Aylık izleme", 10800),
+        ("2023-09", 0.446, "Aylık izleme", 11100), ("2023-10", 0.445, "Aylık izleme", 11200),
+        ("2023-11", 0.444, "Aylık izleme", 10900), ("2023-12", 0.443, "Aylık izleme", 10400),
+        ("2024-01", 0.443, "Aylık izleme", 11300), ("2024-02", 0.442, "Aylık izleme", 10700),
+        ("2024-03", 0.441, "Aylık izleme", 11000), ("2024-04", 0.442, "Aylık izleme", 11100),
+        ("2024-05", 0.441, "Aylık izleme", 10800), ("2024-06", 0.440, "Aylık izleme", 10900),
+        ("2024-07", 0.431, "Aylık izleme", 11200), ("2024-08", 0.429, "Aylık izleme", 10700),
+        ("2024-09", 0.427, "Aylık izleme", 11000), ("2024-10", 0.426, "Aylık izleme", 11100),
+        ("2024-11", 0.424, "Aylık izleme", 10900), ("2024-12", 0.423, "Aylık izleme", 10300),
+        ("2025-01", 0.423, "Aylık izleme", 11200), ("2025-02", 0.422, "Aylık izleme", 10700),
+        ("2025-03", 0.421, "Aylık izleme", 11000), ("2025-04", 0.422, "Aylık izleme", 11100),
+        ("2025-05", 0.421, "Aylık izleme", 10800), ("2025-06", 0.422, "Aylık izleme", 10900),
+        ("2025-07", 0.421, "Aylık izleme", 11200), ("2025-08", 0.420, "Aylık izleme", 10600),
+        ("2025-09", 0.421, "Aylık izleme", 11000), ("2025-10", 0.422, "Aylık izleme", 11100),
+        ("2025-11", 0.421, "Aylık izleme", 10800), ("2025-12", 0.420, "Aylık izleme", 10200),
+        ("2026-01", 0.420, "Aylık izleme", 11100), ("2026-02", 0.421, "Aylık izleme", 10700),
+        ("2026-03", 0.420, "Aylık izleme", 11000),
+        # Son 3 ay farkları: 0.060, 0.059, 0.060 → UYARI ✓
+    ])
+
+    # ── M3: Kredi Kartı Davranış v1.5 (gini_dev=0.71) ──
+    # Geliştirme: 2024-01 → 2024-05 | İzleme başlangıcı: 2024-07 | Uyarı: HAYIR
+    _add_gini(m3.id, [
+        # Geliştirme dönemi quarterly
+        ("2024-Q1", 0.712, "Geliştirme dönemi", 28000),
+        ("2024-Q2", 0.695, "Geliştirme dönemi", 26000),
+        # OOT validasyon
+        ("2024-Q3", 0.671, "OOT Validasyon", 22000),
+        # Aylık izleme 2024-07 → 2026-03 (model stabil, son 3 ayda fark <0.05)
+        ("2024-07", 0.680, "Aylık izleme", 18500), ("2024-08", 0.678, "Aylık izleme", 19200),
+        ("2024-09", 0.675, "Aylık izleme", 18800), ("2024-10", 0.673, "Aylık izleme", 19100),
+        ("2024-11", 0.671, "Aylık izleme", 18600), ("2024-12", 0.670, "Aylık izleme", 17900),
+        ("2025-01", 0.672, "Aylık izleme", 19300), ("2025-02", 0.670, "Aylık izleme", 18700),
+        ("2025-03", 0.669, "Aylık izleme", 19000), ("2025-04", 0.668, "Aylık izleme", 19200),
+        ("2025-05", 0.670, "Aylık izleme", 18800), ("2025-06", 0.669, "Aylık izleme", 19100),
+        ("2025-07", 0.668, "Aylık izleme", 19400), ("2025-08", 0.667, "Aylık izleme", 18900),
+        ("2025-09", 0.668, "Aylık izleme", 19200), ("2025-10", 0.666, "Aylık izleme", 19300),
+        ("2025-11", 0.667, "Aylık izleme", 18800), ("2025-12", 0.666, "Aylık izleme", 18200),
+        ("2026-01", 0.666, "Aylık izleme", 19100), ("2026-02", 0.660, "Aylık izleme", 18700),
+        ("2026-03", 0.651, "Aylık izleme", 19000),
+        # Son 3 ay farkları: 0.044, 0.050, 0.059 → İlk ay <0.05, UYARI YOK ✓
+    ])
+
+    # ── M4: Konut Başvuru v1.0 (gini_dev=0.55, under_review) ──
+    # Geliştirme: 2021-03 → 2021-09 | İzleme başlangıcı: 2022-01 | Uyarı: EVET (ciddi düşüş)
+    _add_gini(m4.id, [
+        # Geliştirme dönemi quarterly
+        ("2021-Q2", 0.550, "Geliştirme dönemi", 17000),
+        ("2021-Q3", 0.532, "Geliştirme dönemi", 16000),
+        # OOT validasyon
+        ("2022-Q1", 0.510, "OOT Validasyon", 14000),
+        # Aylık izleme 2022-01 → 2026-03 (ciddi ve sürekli düşüş)
+        ("2022-01", 0.503, "Aylık izleme", 8200), ("2022-02", 0.499, "Aylık izleme", 7900),
+        ("2022-03", 0.496, "Aylık izleme", 8100), ("2022-04", 0.492, "Aylık izleme", 8300),
+        ("2022-05", 0.489, "Aylık izleme", 7800), ("2022-06", 0.485, "Aylık izleme", 8000),
+        ("2022-07", 0.481, "Aylık izleme", 8200), ("2022-08", 0.478, "Aylık izleme", 7900),
+        ("2022-09", 0.474, "Aylık izleme", 8100), ("2022-10", 0.470, "Aylık izleme", 8300),
+        ("2022-11", 0.467, "Aylık izleme", 7800), ("2022-12", 0.463, "Aylık izleme", 7600),
+        ("2023-01", 0.459, "Aylık izleme", 8200), ("2023-02", 0.456, "Aylık izleme", 7900),
+        ("2023-03", 0.452, "Aylık izleme", 8100), ("2023-04", 0.448, "Aylık izleme", 8200),
+        ("2023-05", 0.445, "Aylık izleme", 7800), ("2023-06", 0.441, "Aylık izleme", 7900),
+        ("2023-07", 0.437, "Aylık izleme", 8100), ("2023-08", 0.433, "Aylık izleme", 7900),
+        ("2023-09", 0.430, "Aylık izleme", 8000), ("2023-10", 0.426, "Aylık izleme", 8200),
+        ("2023-11", 0.422, "Aylık izleme", 7800), ("2023-12", 0.419, "Aylık izleme", 7500),
+        ("2024-01", 0.415, "Aylık izleme", 8100), ("2024-02", 0.411, "Aylık izleme", 7800),
+        ("2024-03", 0.408, "Aylık izleme", 8000), ("2024-04", 0.405, "Aylık izleme", 8200),
+        ("2024-05", 0.402, "Aylık izleme", 7700), ("2024-06", 0.399, "Aylık izleme", 7900),
+        ("2024-07", 0.396, "Aylık izleme", 8100), ("2024-08", 0.393, "Aylık izleme", 7800),
+        ("2024-09", 0.390, "Aylık izleme", 8000), ("2024-10", 0.389, "Aylık izleme", 8200),
+        ("2024-11", 0.387, "Aylık izleme", 7700), ("2024-12", 0.386, "Aylık izleme", 7400),
+        ("2025-01", 0.386, "Aylık izleme", 8000), ("2025-02", 0.387, "Aylık izleme", 7700),
+        ("2025-03", 0.385, "Aylık izleme", 7900), ("2025-04", 0.384, "Aylık izleme", 8100),
+        ("2025-05", 0.385, "Aylık izleme", 7700), ("2025-06", 0.386, "Aylık izleme", 7800),
+        ("2025-07", 0.384, "Aylık izleme", 8000), ("2025-08", 0.385, "Aylık izleme", 7700),
+        ("2025-09", 0.384, "Aylık izleme", 7900), ("2025-10", 0.385, "Aylık izleme", 8100),
+        ("2025-11", 0.384, "Aylık izleme", 7700), ("2025-12", 0.383, "Aylık izleme", 7300),
+        ("2026-01", 0.382, "Aylık izleme", 7900), ("2026-02", 0.385, "Aylık izleme", 7700),
+        ("2026-03", 0.381, "Aylık izleme", 8000),
+        # Son 3 ay farkları: 0.168, 0.165, 0.169 → UYARI ✓ (kritik)
+    ])
+
+    # ── M5: Oto Başvuru v1.2 (gini_dev=0.41, retired 2024-06) ──
+    # Geliştirme: 2020-06 → 2020-12 | İzleme: 2021-01 → 2024-06 (emekliye ayrıldı)
+    _add_gini(m5.id, [
+        # Geliştirme dönemi quarterly
+        ("2020-Q3", 0.412, "Geliştirme dönemi", 12000),
+        ("2020-Q4", 0.405, "Geliştirme dönemi", 11500),
+        # OOT validasyon
+        ("2021-Q2", 0.381, "OOT Validasyon", 9500),
+        # Aylık izleme 2021-01 → 2024-06 (modelin emekliye ayrılmasına kadar)
+        ("2021-01", 0.392, "Aylık izleme", 6800), ("2021-02", 0.390, "Aylık izleme", 6500),
+        ("2021-03", 0.388, "Aylık izleme", 6700), ("2021-04", 0.386, "Aylık izleme", 6900),
+        ("2021-05", 0.385, "Aylık izleme", 6400), ("2021-06", 0.383, "Aylık izleme", 6600),
+        ("2021-07", 0.381, "Aylık izleme", 6800), ("2021-08", 0.380, "Aylık izleme", 6500),
+        ("2021-09", 0.378, "Aylık izleme", 6700), ("2021-10", 0.376, "Aylık izleme", 6900),
+        ("2021-11", 0.374, "Aylık izleme", 6400), ("2021-12", 0.372, "Aylık izleme", 6100),
+        ("2022-01", 0.370, "Aylık izleme", 6700), ("2022-02", 0.368, "Aylık izleme", 6400),
+        ("2022-03", 0.367, "Aylık izleme", 6600), ("2022-04", 0.365, "Aylık izleme", 6800),
+        ("2022-05", 0.363, "Aylık izleme", 6300), ("2022-06", 0.362, "Aylık izleme", 6500),
+        ("2022-07", 0.360, "Aylık izleme", 6700), ("2022-08", 0.359, "Aylık izleme", 6400),
+        ("2022-09", 0.357, "Aylık izleme", 6600), ("2022-10", 0.356, "Aylık izleme", 6800),
+        ("2022-11", 0.354, "Aylık izleme", 6300), ("2022-12", 0.353, "Aylık izleme", 5900),
+        ("2023-01", 0.351, "Aylık izleme", 6600), ("2023-02", 0.350, "Aylık izleme", 6300),
+        ("2023-03", 0.349, "Aylık izleme", 6500), ("2023-04", 0.348, "Aylık izleme", 6700),
+        ("2023-05", 0.347, "Aylık izleme", 6200), ("2023-06", 0.346, "Aylık izleme", 6400),
+        ("2023-07", 0.354, "Aylık izleme", 6600), ("2023-08", 0.353, "Aylık izleme", 6300),
+        ("2023-09", 0.352, "Aylık izleme", 6500), ("2023-10", 0.351, "Aylık izleme", 6700),
+        ("2023-11", 0.350, "Aylık izleme", 6200), ("2023-12", 0.350, "Aylık izleme", 5800),
+        ("2024-01", 0.350, "Aylık izleme", 6500), ("2024-02", 0.350, "Aylık izleme", 6200),
+        ("2024-03", 0.350, "Aylık izleme", 6400), ("2024-04", 0.349, "Aylık izleme", 6600),
+        ("2024-05", 0.350, "Aylık izleme", 6100), ("2024-06", 0.350, "Aylık izleme", 6300),
+        # Model 2024-07'de emekliye ayrıldı, izleme sona erdi
+    ])
 
     # ── Geliştirme Projeleri ──
     p1 = DevelopmentProject(

@@ -1,3 +1,4 @@
+import re
 from flask import Blueprint, jsonify
 from sqlalchemy import func, case
 from sqlalchemy.orm import selectinload
@@ -91,3 +92,53 @@ def development_progress():
         "priority": p.priority,
         "target_end_date": p.target_end_date.isoformat() if p.target_end_date else None,
     } for p in projects])
+
+
+_MONTHLY_RE = re.compile(r'^\d{4}-\d{2}$')
+
+
+@dashboard_bp.route("/gini-alerts", methods=["GET"])
+def gini_alerts():
+    """Son 3 aylık izleme Ginisi'nde geliştirme Gini'sinden ≥5 puan sapma olan modeller."""
+    models = ModelInventory.query.options(
+        selectinload(ModelInventory.gini_history)
+    ).filter(ModelInventory.status.in_(["active", "under_review"])).all()
+
+    alerts = []
+    for model in models:
+        if model.gini_development is None:
+            continue
+        monthly = sorted(
+            [g for g in model.gini_history if _MONTHLY_RE.match(g.period)],
+            key=lambda g: g.period,
+            reverse=True,
+        )
+        if len(monthly) < 3:
+            continue
+        last3 = monthly[:3]
+        diffs = [model.gini_development - g.gini_value for g in last3]
+        # Kontrol: her 3 ayda da mutlak sapma ≥ 0.05 (5 Gini puanı)
+        if not all(abs(d) >= 0.05 for d in diffs):
+            continue
+        # Yön: düşüş mü yoksa artış mı?
+        direction = "drop" if diffs[0] > 0 else "rise"
+        alerts.append({
+            "model_id": model.id,
+            "model_name": model.model_name,
+            "scorecard_category": model.scorecard_category,
+            "product_type": model.product_type,
+            "status": model.status,
+            "owner": model.owner,
+            "gini_development": model.gini_development,
+            "last3_periods": [g.period for g in last3],
+            "last3_values": [round(g.gini_value, 4) for g in last3],
+            "last3_diffs": [round(d, 4) for d in diffs],
+            "direction": direction,
+        })
+
+    # Sapma büyüklüğüne göre sırala (en kritik önce)
+    alerts.sort(key=lambda a: abs(a["last3_diffs"][0]), reverse=True)
+
+    response = jsonify(alerts)
+    response.headers["Cache-Control"] = "public, max-age=60"
+    return response
