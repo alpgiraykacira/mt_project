@@ -1,8 +1,9 @@
+import io
 from datetime import date
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
 from sqlalchemy.orm import selectinload
 from models import db
-from models.scorecard import ModelInventory, TechnicalGuide, ValidationReport, GiniHistory
+from models.scorecard import ModelInventory, TechnicalGuide, ValidationReport, GiniHistory, ModelRollout, ModelVariable
 
 models_bp = Blueprint("models", __name__)
 
@@ -60,15 +61,26 @@ def create_model():
         product_type=data.get("product_type"),
         development_period_start=_parse_date(data.get("development_period_start")),
         development_period_end=_parse_date(data.get("development_period_end")),
+        oot_period_start=_parse_date(data.get("oot_period_start")),
+        oot_period_end=_parse_date(data.get("oot_period_end")),
+        validation_submission_date=_parse_date(data.get("validation_submission_date")),
         development_table=data.get("development_table"),
         target_variable=data.get("target_variable"),
         gini_development=data.get("gini_development"),
+        gini_train=data.get("gini_train"),
+        gini_cv=data.get("gini_cv"),
+        gini_itt=data.get("gini_itt"),
+        gini_oot=data.get("gini_oot"),
         gini_validation=data.get("gini_validation"),
         gini_current=data.get("gini_current"),
         final_score=data.get("final_score"),
         status=data.get("status", "active"),
         owner=data.get("owner"),
         description=data.get("description"),
+        connected_processes=data.get("connected_processes"),
+        dependency_warning=data.get("dependency_warning"),
+        psi_flag=data.get("psi_flag", False),
+        alert_work_started=data.get("alert_work_started", False),
     )
     db.session.add(model)
     db.session.commit()
@@ -82,11 +94,15 @@ def get_model(model_id):
         selectinload(ModelInventory.technical_details),
         selectinload(ModelInventory.validation_reports),
         selectinload(ModelInventory.gini_history),
+        selectinload(ModelInventory.rollout_stages),
+        selectinload(ModelInventory.model_variables),
     ).get_or_404(model_id)
     data = model.to_dict()
     data["technical_details"] = [t.to_dict() for t in model.technical_details]
     data["validation_reports"] = [v.to_dict() for v in model.validation_reports]
     data["gini_history"] = [g.to_dict() for g in model.gini_history]
+    data["rollout_stages"] = sorted([r.to_dict() for r in model.rollout_stages], key=lambda x: x["rollout_percentage"])
+    data["model_variables"] = sorted([v.to_dict() for v in model.model_variables], key=lambda x: (x["importance_rank"] or 9999))
     return jsonify(data)
 
 
@@ -97,15 +113,17 @@ def update_model(model_id):
     data = request.get_json()
 
     for field in ["model_name", "scorecard_category", "product_type", "development_table",
-                   "target_variable", "gini_development", "gini_validation",
-                   "gini_current", "final_score", "status", "owner", "description"]:
+                   "target_variable", "gini_development", "gini_train", "gini_cv",
+                   "gini_itt", "gini_oot", "gini_validation", "gini_current", "final_score",
+                   "status", "owner", "description", "connected_processes", "dependency_warning",
+                   "psi_flag", "alert_work_started"]:
         if field in data:
             setattr(model, field, data[field])
 
-    if "development_period_start" in data:
-        model.development_period_start = _parse_date(data["development_period_start"])
-    if "development_period_end" in data:
-        model.development_period_end = _parse_date(data["development_period_end"])
+    for date_field in ["development_period_start", "development_period_end",
+                        "oot_period_start", "oot_period_end", "validation_submission_date"]:
+        if date_field in data:
+            setattr(model, date_field, _parse_date(data[date_field]))
 
     db.session.commit()
     return jsonify(model.to_dict())
@@ -174,19 +192,59 @@ def list_validations(model_id):
 
 @models_bp.route("/<int:model_id>/validations", methods=["POST"])
 def create_validation(model_id):
+    """Yeni validasyon raporu ekle (JSON veya multipart form)."""
     db.get_or_404(ModelInventory, model_id)
-    data = request.get_json()
-    report = ValidationReport(
-        model_id=model_id,
-        report_name=data["report_name"],
-        report_type=data["report_type"],
-        file_path=data.get("file_path"),
-        report_date=_parse_date(data.get("report_date")),
-        notes=data.get("notes"),
-    )
+
+    if request.content_type and "multipart/form-data" in request.content_type:
+        # File upload
+        report_name = request.form.get("report_name", "")
+        report_type = request.form.get("report_type", "")
+        report_date = request.form.get("report_date")
+        notes = request.form.get("notes")
+        file_obj = request.files.get("file")
+
+        report = ValidationReport(
+            model_id=model_id,
+            report_name=report_name,
+            report_type=report_type,
+            report_date=_parse_date(report_date),
+            notes=notes,
+        )
+        if file_obj:
+            report.file_data = file_obj.read()
+            report.file_mimetype = file_obj.mimetype
+            report.file_path = file_obj.filename
+    else:
+        data = request.get_json()
+        report = ValidationReport(
+            model_id=model_id,
+            report_name=data["report_name"],
+            report_type=data["report_type"],
+            file_path=data.get("file_path"),
+            report_date=_parse_date(data.get("report_date")),
+            notes=data.get("notes"),
+        )
+
     db.session.add(report)
     db.session.commit()
     return jsonify(report.to_dict()), 201
+
+
+@models_bp.route("/<int:model_id>/validations/<int:report_id>/download", methods=["GET"])
+def download_validation(model_id, report_id):
+    """Validasyon raporunu indir."""
+    report = db.get_or_404(ValidationReport, report_id)
+    if not report.file_data:
+        return jsonify({"error": "Dosya bulunamadı"}), 404
+
+    mimetype = report.file_mimetype or "application/octet-stream"
+    filename = report.file_path or report.report_name
+    return send_file(
+        io.BytesIO(report.file_data),
+        mimetype=mimetype,
+        as_attachment=True,
+        download_name=filename,
+    )
 
 
 @models_bp.route("/<int:model_id>/validations/<int:report_id>", methods=["DELETE"])
@@ -201,7 +259,15 @@ def delete_validation(model_id, report_id):
 
 @models_bp.route("/<int:model_id>/gini-history", methods=["GET"])
 def list_gini_history(model_id):
-    records = GiniHistory.query.filter_by(model_id=model_id).order_by(GiniHistory.period).all()
+    # Tarih filtresi
+    period_from = request.args.get("period_from")
+    period_to = request.args.get("period_to")
+    query = GiniHistory.query.filter_by(model_id=model_id)
+    if period_from:
+        query = query.filter(GiniHistory.period >= period_from)
+    if period_to:
+        query = query.filter(GiniHistory.period <= period_to)
+    records = query.order_by(GiniHistory.period.desc()).all()
     return jsonify([r.to_dict() for r in records])
 
 
@@ -213,6 +279,7 @@ def create_gini_record(model_id):
         model_id=model_id,
         period=data["period"],
         gini_value=data["gini_value"],
+        target_ratio=data.get("target_ratio"),
         sample_size=data.get("sample_size"),
         notes=data.get("notes"),
     )
@@ -221,10 +288,100 @@ def create_gini_record(model_id):
     return jsonify(record.to_dict()), 201
 
 
-@models_bp.route("/<int:model_id>/gini-history/<int:record_id>", methods=["DELETE"])
-def delete_gini_record(model_id, record_id):
-    record = db.get_or_404(GiniHistory, record_id)
-    db.session.delete(record)
+# NOT: Gini geçmişi kayıtları silinmez (feedback gereği)
+
+
+# ── Model Rollout (İmplementasyon Kademeleri) ──
+
+@models_bp.route("/<int:model_id>/rollout", methods=["GET"])
+def list_rollout(model_id):
+    stages = ModelRollout.query.filter_by(model_id=model_id).order_by(ModelRollout.rollout_percentage).all()
+    return jsonify([s.to_dict() for s in stages])
+
+
+@models_bp.route("/<int:model_id>/rollout", methods=["POST"])
+def create_rollout(model_id):
+    db.get_or_404(ModelInventory, model_id)
+    data = request.get_json()
+    stage = ModelRollout(
+        model_id=model_id,
+        rollout_percentage=data["rollout_percentage"],
+        rollout_date=_parse_date(data["rollout_date"]),
+        notes=data.get("notes"),
+    )
+    db.session.add(stage)
+    db.session.commit()
+    return jsonify(stage.to_dict()), 201
+
+
+@models_bp.route("/<int:model_id>/rollout/<int:stage_id>", methods=["PUT"])
+def update_rollout(model_id, stage_id):
+    stage = db.get_or_404(ModelRollout, stage_id)
+    data = request.get_json()
+    if "rollout_percentage" in data:
+        stage.rollout_percentage = data["rollout_percentage"]
+    if "rollout_date" in data:
+        stage.rollout_date = _parse_date(data["rollout_date"])
+    if "notes" in data:
+        stage.notes = data["notes"]
+    db.session.commit()
+    return jsonify(stage.to_dict())
+
+
+@models_bp.route("/<int:model_id>/rollout/<int:stage_id>", methods=["DELETE"])
+def delete_rollout(model_id, stage_id):
+    stage = db.get_or_404(ModelRollout, stage_id)
+    db.session.delete(stage)
+    db.session.commit()
+    return "", 204
+
+
+# ── Model Variables (Feature Importance) ──
+
+@models_bp.route("/<int:model_id>/variables", methods=["GET"])
+def list_variables(model_id):
+    variables = ModelVariable.query.filter_by(model_id=model_id).order_by(
+        ModelVariable.importance_rank.asc().nullslast()
+    ).all()
+    return jsonify([v.to_dict() for v in variables])
+
+
+@models_bp.route("/<int:model_id>/variables", methods=["POST"])
+def create_variable(model_id):
+    db.get_or_404(ModelInventory, model_id)
+    data = request.get_json()
+    variable = ModelVariable(
+        model_id=model_id,
+        variable_name=data["variable_name"],
+        variable_description=data.get("variable_description"),
+        iv_value=data.get("iv_value"),
+        importance_rank=data.get("importance_rank"),
+        median_train=data.get("median_train"),
+        coefficient=data.get("coefficient"),
+        woe_bin_count=data.get("woe_bin_count"),
+        notes=data.get("notes"),
+    )
+    db.session.add(variable)
+    db.session.commit()
+    return jsonify(variable.to_dict()), 201
+
+
+@models_bp.route("/<int:model_id>/variables/<int:var_id>", methods=["PUT"])
+def update_variable(model_id, var_id):
+    variable = db.get_or_404(ModelVariable, var_id)
+    data = request.get_json()
+    for field in ["variable_name", "variable_description", "iv_value", "importance_rank",
+                   "median_train", "coefficient", "woe_bin_count", "notes"]:
+        if field in data:
+            setattr(variable, field, data[field])
+    db.session.commit()
+    return jsonify(variable.to_dict())
+
+
+@models_bp.route("/<int:model_id>/variables/<int:var_id>", methods=["DELETE"])
+def delete_variable(model_id, var_id):
+    variable = db.get_or_404(ModelVariable, var_id)
+    db.session.delete(variable)
     db.session.commit()
     return "", 204
 
