@@ -19,6 +19,7 @@ const showDialog = ref(false)
 
 const filterOwner = ref(null)
 const filterStatus = ref(null)
+const filterCategory = ref(null)
 const owners = ref([])
 
 const statusOptions = ['in_progress', 'completed', 'on_hold', 'cancelled']
@@ -46,6 +47,7 @@ const filteredProjects = computed(() => {
   return projects.value.filter(p => {
     if (filterOwner.value && p.owner !== filterOwner.value) return false
     if (filterStatus.value && p.status !== filterStatus.value) return false
+    if (filterCategory.value && p.scorecard_category !== filterCategory.value) return false
     return true
   })
 })
@@ -137,6 +139,13 @@ onMounted(loadProjects)
       <!-- Filters -->
       <div class="card">
         <div class="card-body" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+          <Select
+            v-model="filterCategory"
+            :options="scorecardCategories"
+            placeholder="Kategori"
+            showClear
+            style="width: 150px;"
+          />
           <Select
             v-model="filterOwner"
             :options="owners"

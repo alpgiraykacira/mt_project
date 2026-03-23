@@ -2,7 +2,7 @@
 
 from datetime import date
 from models import db
-from models.scorecard import ModelInventory, TechnicalGuide, ValidationReport, GiniHistory
+from models.scorecard import ModelInventory, TechnicalGuide, ValidationReport, GiniHistory, ModelRollout, ModelVariable
 from models.development import DevelopmentProject, DevelopmentStage, StageTask
 
 
@@ -16,15 +16,25 @@ def seed_db():
         product_type="Tüketici",
         development_period_start=date(2023, 1, 15),
         development_period_end=date(2023, 6, 30),
+        oot_period_start=date(2023, 7, 1),
+        oot_period_end=date(2023, 9, 30),
+        validation_submission_date=date(2023, 7, 15),
         development_table="TUKETICI_APP_202301",
         target_variable="default_flag_12m",
         gini_development=0.62,
+        gini_train=0.62,
+        gini_cv=0.59,
+        gini_itt=0.60,
+        gini_oot=0.58,
         gini_validation=0.58,
         gini_current=0.55,
         final_score=0.87,
         status="active",
         owner="Alp Giray Kaçıra",
         description="Tüketici kredisi başvuru skorkartı - 12 aylık temerrüt olasılığı modeli.",
+        connected_processes="Bu modelin servisi FPD (First Payment Default) modelinde de girdi olarak kullanılmaktadır.",
+        psi_flag=False,
+        alert_work_started=False,
     )
     m2 = ModelInventory(
         model_name="KMH Davranış Skorkartı v2.0",
@@ -32,15 +42,24 @@ def seed_db():
         product_type="KMH",
         development_period_start=date(2022, 7, 1),
         development_period_end=date(2022, 12, 31),
+        oot_period_start=date(2023, 1, 1),
+        oot_period_end=date(2023, 3, 31),
+        validation_submission_date=date(2023, 1, 10),
         development_table="KMH_BEH_DEV_202207",
         target_variable="loss_rate",
         gini_development=0.48,
+        gini_train=0.48,
+        gini_cv=0.45,
+        gini_itt=0.46,
+        gini_oot=0.44,
         gini_validation=0.44,
         gini_current=0.42,
         final_score=0.78,
         status="active",
         owner="Ahmet Yılmaz",
         description="KMH (Kredili Mevduat Hesabı) davranışsal skor modeli.",
+        psi_flag=True,
+        alert_work_started=True,
     )
     m3 = ModelInventory(
         model_name="Kredi Kartı Davranış Skorkartı v1.5",
@@ -48,15 +67,24 @@ def seed_db():
         product_type="Kredi Kartı",
         development_period_start=date(2024, 1, 10),
         development_period_end=date(2024, 5, 15),
+        oot_period_start=date(2024, 6, 1),
+        oot_period_end=date(2024, 8, 31),
+        validation_submission_date=date(2024, 6, 15),
         development_table="CC_BEH_DEV_202401",
         target_variable="dpd_90plus_6m",
         gini_development=0.71,
+        gini_train=0.71,
+        gini_cv=0.68,
+        gini_itt=0.69,
+        gini_oot=0.67,
         gini_validation=0.67,
         gini_current=0.65,
         final_score=0.92,
         status="active",
         owner="Elif Demir",
         description="Kredi kartı müşterileri için davranışsal skor modeli.",
+        psi_flag=False,
+        alert_work_started=False,
     )
     m4 = ModelInventory(
         model_name="Konut Başvuru Skorkartı v1.0",
@@ -64,15 +92,25 @@ def seed_db():
         product_type="Konut",
         development_period_start=date(2021, 3, 1),
         development_period_end=date(2021, 9, 30),
+        oot_period_start=date(2021, 10, 1),
+        oot_period_end=date(2021, 12, 31),
+        validation_submission_date=date(2021, 10, 20),
         development_table="KONUT_APP_DEV_2021",
         target_variable="default_flag_24m",
         gini_development=0.55,
+        gini_train=0.55,
+        gini_cv=0.52,
+        gini_itt=0.53,
+        gini_oot=0.51,
         gini_validation=0.51,
         gini_current=0.38,
         final_score=0.72,
         status="under_review",
         owner="Ahmet Yılmaz",
         description="Konut kredisi başvuru skoru - performans düşüşü nedeniyle inceleniyor.",
+        dependency_warning="Bu ürün grubu düşük başvuru adedi nedeniyle Tüketici Başvuru Skorkartı altyapısını kullanan yardımcı bir modelden yararlanmaktadır. Söz konusu modelin kapatılması durumunda Konut skoru da sekteye uğrayabilir.",
+        psi_flag=True,
+        alert_work_started=False,
     )
     m5 = ModelInventory(
         model_name="Oto Başvuru Skorkartı v1.2",
@@ -80,14 +118,24 @@ def seed_db():
         product_type="Oto",
         development_period_start=date(2020, 6, 1),
         development_period_end=date(2020, 12, 31),
+        oot_period_start=date(2021, 1, 1),
+        oot_period_end=date(2021, 3, 31),
+        validation_submission_date=date(2021, 1, 5),
         development_table="OTO_APP_DEV_2020",
         target_variable="default_flag_12m",
         gini_development=0.41,
+        gini_train=0.41,
+        gini_cv=0.39,
+        gini_itt=0.40,
+        gini_oot=0.38,
         gini_validation=0.38,
         gini_current=0.35,
         final_score=0.68,
         status="retired",
         owner="Elif Demir",
+        dependency_warning="Oto ürün grubunda düşük adet arzı nedeniyle başka bir model servisinden yararlanılmaktadır. Bu bağımlı model kapatılırsa oto skoru da etkilenir.",
+        psi_flag=False,
+        alert_work_started=False,
     )
     db.session.add_all([m1, m2, m3, m4, m5])
     db.session.flush()
@@ -149,10 +197,14 @@ def seed_db():
     # Uyarı mekanizması sadece "YYYY-MM" formatlı kayıtlar üzerinden çalışır.
 
     def _add_gini(model_id, records):
-        for period, gini_val, notes, sample in records:
+        """records: list of (period, gini_val, notes, sample, target_ratio=None)"""
+        for rec in records:
+            period, gini_val, notes, sample = rec[0], rec[1], rec[2], rec[3]
+            target_ratio = rec[4] if len(rec) > 4 else None
             db.session.add(GiniHistory(
                 model_id=model_id, period=period,
                 gini_value=gini_val, notes=notes, sample_size=sample,
+                target_ratio=target_ratio,
             ))
 
     # ── M1: Tüketici Başvuru v3.2 (gini_dev=0.62) ──
@@ -421,12 +473,42 @@ def seed_db():
     add_stage(p3.id, "7", "Dokümantasyon", order=6)
     add_stage(p3.id, "8", "Sunum", order=7)
 
+    # ── Model Rollout Kademeleri ──
+    # M1: Tüketici - tam cademi
+    for pct, dt in [(10, date(2023, 8, 1)), (25, date(2023, 8, 15)), (50, date(2023, 9, 1)), (100, date(2023, 10, 1))]:
+        db.session.add(ModelRollout(model_id=m1.id, rollout_percentage=pct, rollout_date=dt))
+    # M3: Kredi Kartı - tam kademe
+    for pct, dt in [(10, date(2024, 9, 1)), (25, date(2024, 9, 20)), (50, date(2024, 10, 10)), (100, date(2024, 11, 1))]:
+        db.session.add(ModelRollout(model_id=m3.id, rollout_percentage=pct, rollout_date=dt))
+
+    # ── Model Değişkenleri ──
+    # M1: Tüketici Başvuru
+    m1_vars = [
+        ModelVariable(model_id=m1.id, variable_name="utilization_ratio", variable_description="Bakiye / Limit oranı", iv_value=0.3812, importance_rank=1, median_train=0.42, coefficient=1.254, woe_bin_count=6),
+        ModelVariable(model_id=m1.id, variable_name="dpd_count_6m", variable_description="Son 6 ay gecikme sayısı", iv_value=0.2940, importance_rank=2, median_train=0.0, coefficient=0.987, woe_bin_count=5),
+        ModelVariable(model_id=m1.id, variable_name="credit_age_months", variable_description="Kredi geçmişi yaşı (ay)", iv_value=0.2105, importance_rank=3, median_train=48.0, coefficient=-0.612, woe_bin_count=7),
+        ModelVariable(model_id=m1.id, variable_name="num_active_products", variable_description="Aktif ürün sayısı", iv_value=0.1654, importance_rank=4, median_train=2.0, coefficient=-0.334, woe_bin_count=5),
+        ModelVariable(model_id=m1.id, variable_name="max_dpd_12m", variable_description="Son 12 ay maksimum gecikme gün sayısı", iv_value=0.1423, importance_rank=5, median_train=0.0, coefficient=0.821, woe_bin_count=6),
+    ]
+    db.session.add_all(m1_vars)
+
+    # M3: Kredi Kartı Davranış
+    m3_vars = [
+        ModelVariable(model_id=m3.id, variable_name="cc_utilization_3m_avg", variable_description="Kredi kartı 3 aylık ortalama kullanım oranı", iv_value=0.4120, importance_rank=1, median_train=0.58, coefficient=1.543, woe_bin_count=7),
+        ModelVariable(model_id=m3.id, variable_name="min_payment_ratio", variable_description="Asgari ödeme / Toplam borç oranı", iv_value=0.3540, importance_rank=2, median_train=0.85, coefficient=-1.231, woe_bin_count=6),
+        ModelVariable(model_id=m3.id, variable_name="cash_advance_ratio", variable_description="Nakit avans kullanım oranı", iv_value=0.2180, importance_rank=3, median_train=0.0, coefficient=0.765, woe_bin_count=5),
+        ModelVariable(model_id=m3.id, variable_name="payment_streak", variable_description="Ardışık tam ödeme sayısı", iv_value=0.1930, importance_rank=4, median_train=3.0, coefficient=-0.543, woe_bin_count=6),
+    ]
+    db.session.add_all(m3_vars)
+
     db.session.commit()
     print("Seed data loaded successfully!")
     print(f"  - {ModelInventory.query.count()} models")
     print(f"  - {TechnicalGuide.query.count()} technical guide sections")
     print(f"  - {ValidationReport.query.count()} validation reports")
     print(f"  - {GiniHistory.query.count()} gini history records")
+    print(f"  - {ModelRollout.query.count()} rollout stages")
+    print(f"  - {ModelVariable.query.count()} model variables")
     print(f"  - {DevelopmentProject.query.count()} development projects")
     print(f"  - {DevelopmentStage.query.count()} development stages")
     print(f"  - {StageTask.query.count()} tasks")

@@ -41,7 +41,6 @@ export function invalidateDashboardCache() {
 // ── Dashboard ──
 export const dashboardApi = {
   getSummary: () => cachedGet('/dashboard/summary'),
-  getModelTypes: () => cachedGet('/dashboard/model-types'),
   getGiniOverview: () => cachedGet('/dashboard/gini-overview'),
   getDevelopmentProgress: () => cachedGet('/dashboard/development-progress'),
   getGiniAlerts: () => cachedGet('/dashboard/gini-alerts'),
@@ -64,12 +63,27 @@ export const modelsApi = {
   // Validation Reports
   listValidations: (modelId) => api.get(`/models/${modelId}/validations`),
   createValidation: (modelId, data) => api.post(`/models/${modelId}/validations`, data),
+  uploadValidation: (modelId, formData) => api.post(`/models/${modelId}/validations`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  downloadValidation: (modelId, reportId) => `${api.defaults.baseURL}/models/${modelId}/validations/${reportId}/download`,
   deleteValidation: (modelId, reportId) => api.delete(`/models/${modelId}/validations/${reportId}`),
 
   // Gini History
-  listGiniHistory: (modelId) => api.get(`/models/${modelId}/gini-history`),
+  listGiniHistory: (modelId, params) => api.get(`/models/${modelId}/gini-history`, { params }),
   createGiniRecord: (modelId, data) => api.post(`/models/${modelId}/gini-history`, data),
-  deleteGiniRecord: (modelId, recordId) => api.delete(`/models/${modelId}/gini-history/${recordId}`),
+
+  // Rollout (İmplementasyon Kademeleri)
+  listRollout: (modelId) => api.get(`/models/${modelId}/rollout`),
+  createRollout: (modelId, data) => api.post(`/models/${modelId}/rollout`, data),
+  updateRollout: (modelId, stageId, data) => api.put(`/models/${modelId}/rollout/${stageId}`, data),
+  deleteRollout: (modelId, stageId) => api.delete(`/models/${modelId}/rollout/${stageId}`),
+
+  // Model Variables (Feature Importance)
+  listVariables: (modelId) => api.get(`/models/${modelId}/variables`),
+  createVariable: (modelId, data) => api.post(`/models/${modelId}/variables`, data),
+  updateVariable: (modelId, varId, data) => api.put(`/models/${modelId}/variables/${varId}`, data),
+  deleteVariable: (modelId, varId) => api.delete(`/models/${modelId}/variables/${varId}`),
 }
 
 // ── Development ──
