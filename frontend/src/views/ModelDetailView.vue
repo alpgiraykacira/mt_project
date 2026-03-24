@@ -61,6 +61,27 @@ const showGiniDialog = ref(false)
 const giniForm = ref({ period: '', gini_value: null, target_ratio: null, sample_size: null, notes: '' })
 const giniPeriodFrom = ref('')
 const giniPeriodTo = ref('')
+const giniViewMode = ref('monthly')  // 'monthly' | 'quarterly'
+
+const MONTHLY_RE_STR   = /^\d{4}-\d{2}$/
+const QUARTERLY_RE_STR = /^\d{4}-Q\d$/
+
+const lastCompletedMonth = computed(() => {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = now.getMonth()  // 0=Jan
+  const prevMonth = m === 0 ? 12 : m
+  const prevYear  = m === 0 ? y - 1 : y
+  return `${prevYear}-${String(prevMonth).padStart(2, '0')}`
+})
+
+const lastCompletedQuarter = computed(() => {
+  const now = new Date()
+  const y = now.getFullYear()
+  const q = Math.floor(now.getMonth() / 3)  // 0-indexed current quarter
+  if (q === 0) return `${y - 1}-Q4`
+  return `${y}-Q${q}`
+})
 
 // Rollout (İmplementasyon Kademeleri)
 const showRolloutDialog = ref(false)
@@ -91,15 +112,33 @@ const redevelopmentAlert = computed(() => {
 
 const filteredGiniHistory = computed(() => {
   if (!model.value?.gini_history) return []
-  let records = [...model.value.gini_history]
+  const maxPeriod = giniViewMode.value === 'monthly'
+    ? lastCompletedMonth.value
+    : lastCompletedQuarter.value
+  let records = [...model.value.gini_history].filter(g => {
+    if (giniViewMode.value === 'monthly')   return MONTHLY_RE_STR.test(g.period)
+    if (giniViewMode.value === 'quarterly') return QUARTERLY_RE_STR.test(g.period)
+    return true
+  }).filter(g => g.period <= maxPeriod)
   if (giniPeriodFrom.value) records = records.filter(g => g.period >= giniPeriodFrom.value)
-  if (giniPeriodTo.value) records = records.filter(g => g.period <= giniPeriodTo.value)
+  if (giniPeriodTo.value)   records = records.filter(g => g.period <= giniPeriodTo.value)
   return records.sort((a, b) => b.period.localeCompare(a.period))
 })
 
 const giniChartData = computed(() => {
   if (!model.value?.gini_history?.length) return null
-  const sorted = [...model.value.gini_history].sort((a, b) => a.period.localeCompare(b.period))
+  const maxPeriod = giniViewMode.value === 'monthly'
+    ? lastCompletedMonth.value
+    : lastCompletedQuarter.value
+  const sorted = [...model.value.gini_history]
+    .filter(g => {
+      if (giniViewMode.value === 'monthly')   return MONTHLY_RE_STR.test(g.period)
+      if (giniViewMode.value === 'quarterly') return QUARTERLY_RE_STR.test(g.period)
+      return true
+    })
+    .filter(g => g.period <= maxPeriod)
+    .sort((a, b) => a.period.localeCompare(b.period))
+  if (!sorted.length) return null
   const datasets = [
     {
       label: 'Gini Değeri',
@@ -572,11 +611,33 @@ onMounted(loadModel)
 
           <!-- Filtreler ve Aksiyon butonları -->
           <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px;">
+            <!-- Aylık / Çeyreklik toggle -->
+            <div style="display: flex; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; flex-shrink: 0;">
+              <button
+                @click="giniViewMode = 'monthly'"
+                :style="{
+                  padding: '4px 14px', fontSize: '0.82rem', border: 'none', cursor: 'pointer',
+                  background: giniViewMode === 'monthly' ? '#3b82f6' : '#f8fafc',
+                  color:      giniViewMode === 'monthly' ? '#fff'    : '#64748b',
+                }"
+              >Aylık</button>
+              <button
+                @click="giniViewMode = 'quarterly'"
+                :style="{
+                  padding: '4px 14px', fontSize: '0.82rem', border: 'none', cursor: 'pointer',
+                  background: giniViewMode === 'quarterly' ? '#3b82f6' : '#f8fafc',
+                  color:      giniViewMode === 'quarterly' ? '#fff'    : '#64748b',
+                }"
+              >Çeyreklik</button>
+            </div>
+            <span style="font-size: 0.75rem; color: #94a3b8;">
+              max: {{ giniViewMode === 'monthly' ? lastCompletedMonth : lastCompletedQuarter }}
+            </span>
             <div style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem;">
               <label>Dönem:</label>
-              <input v-model="giniPeriodFrom" type="text" placeholder="2024-01" style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; font-size: 0.82rem; width: 100px;" />
+              <input v-model="giniPeriodFrom" type="text" :placeholder="giniViewMode === 'monthly' ? '2024-01' : '2024-Q1'" style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; font-size: 0.82rem; width: 100px;" />
               <span>—</span>
-              <input v-model="giniPeriodTo" type="text" placeholder="2026-03" style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; font-size: 0.82rem; width: 100px;" />
+              <input v-model="giniPeriodTo" type="text" :placeholder="giniViewMode === 'monthly' ? '2026-02' : '2025-Q4'" style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; font-size: 0.82rem; width: 100px;" />
             </div>
             <button class="btn btn-secondary btn-sm" @click="exportGiniToExcel" :disabled="!filteredGiniHistory.length">
               <i class="pi pi-file-excel"></i> Excel'e Aktar
