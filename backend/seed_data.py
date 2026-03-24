@@ -108,9 +108,9 @@ def seed_db():
         gini_validation=0.51,
         gini_current=0.38,
         final_score=0.72,
-        status="under_review",
+        status="active",
         owner="Ahmet Yılmaz",
-        description="Konut kredisi başvuru skoru - performans düşüşü nedeniyle inceleniyor.",
+        description="Konut kredisi başvuru skoru.",
         dependency_warning="Bu ürün grubu düşük başvuru adedi nedeniyle Tüketici Başvuru Skorkartı altyapısını kullanan yardımcı bir modelden yararlanmaktadır. Söz konusu modelin kapatılması durumunda Konut skoru da sekteye uğrayabilir.",
         psi_flag=True,
         alert_work_started=False,
@@ -142,7 +142,96 @@ def seed_db():
         alert_work_started=False,
         calibration_status="ok",
     )
-    db.session.add_all([m1, m2, m3, m4, m5])
+    # ── Yeni Başvuru Modelleri ──
+    m6 = ModelInventory(
+        model_name="İhtiyaç Başvuru Skorkartı v2.1",
+        scorecard_category="Başvuru",
+        product_type="İhtiyaç",
+        development_period_start=date(2023, 6, 1),
+        development_period_end=date(2023, 11, 30),
+        oot_period_start=date(2023, 12, 1),
+        oot_period_end=date(2024, 2, 28),
+        development_table="IHTIYAC_APP_202306",
+        target_variable="default_flag_12m",
+        gini_development=0.60,
+        gini_train=0.60,
+        gini_cv=0.57,
+        gini_itt=0.58,
+        gini_oot=0.56,
+        gini_validation=0.56,
+        gini_current=0.57,
+        status="active",
+        owner="Alp Giray Kaçıra",
+        description="İhtiyaç kredisi başvuru skorkartı.",
+        psi_flag=False,
+        alert_work_started=False,
+        calibration_status="ok",
+    )
+    m7 = ModelInventory(
+        model_name="Oto Başvuru Skorkartı v2.0",
+        scorecard_category="Başvuru",
+        product_type="Oto",
+        development_period_start=date(2024, 3, 1),
+        development_period_end=date(2024, 8, 31),
+        oot_period_start=date(2024, 9, 1),
+        oot_period_end=date(2024, 11, 30),
+        development_table="OTO_APP_DEV_202403",
+        target_variable="default_flag_12m",
+        gini_development=0.54,
+        gini_train=0.54,
+        gini_cv=0.51,
+        gini_itt=0.52,
+        gini_oot=0.50,
+        gini_validation=0.50,
+        gini_current=0.51,
+        status="active",
+        owner="Elif Demir",
+        description="Oto kredisi başvuru skorkartı - emekliye ayrılan v1.2'nin yerine geliştirilen yeni versiyon.",
+        psi_flag=False,
+        alert_work_started=False,
+        calibration_status="ok",
+    )
+
+    # ── Yeni Davranış Modelleri (toplamda 16 davranış olacak şekilde) ──
+    _davranis_specs = [
+        # (name, product_type, gini_dev, gini_current, owner)
+        ("Tüketici Davranış Skorkartı v1.0", "Tüketici", 0.64, 0.60, "Alp Giray Kaçıra"),
+        ("Konut Davranış Skorkartı v1.2", "Konut", 0.59, 0.56, "Ahmet Yılmaz"),
+        ("Oto Davranış Skorkartı v1.0", "Oto", 0.62, 0.58, "Elif Demir"),
+        ("İhtiyaç Davranış Skorkartı v2.0", "İhtiyaç", 0.66, 0.63, "Alp Giray Kaçıra"),
+        ("KOBİ Davranış Skorkartı v1.5", "KOBİ", 0.68, 0.53, "Ahmet Yılmaz"),
+        ("Ticari Davranış Skorkartı v1.0", "Ticari", 0.61, 0.58, "Elif Demir"),
+        ("Tarım Davranış Skorkartı v1.0", "Tarım", 0.57, 0.56, "Alp Giray Kaçıra"),
+        ("Mikro KOBİ Davranış Skorkartı v1.0", "Mikro KOBİ", 0.60, 0.57, "Ahmet Yılmaz"),
+        ("Bireysel Mevduat Davranış Skorkartı v1.0", "Bireysel Mevduat", 0.63, 0.60, "Elif Demir"),
+        ("Enerji Sektörü Davranış Skorkartı v1.0", "Enerji", 0.56, 0.55, "Alp Giray Kaçıra"),
+        ("Perakende Davranış Skorkartı v1.0", "Perakende", 0.65, 0.62, "Ahmet Yılmaz"),
+        ("Turizm Davranış Skorkartı v1.0", "Turizm", 0.59, 0.56, "Elif Demir"),
+        ("Sağlık Sektörü Davranış Skorkartı v1.0", "Sağlık", 0.61, 0.58, "Alp Giray Kaçıra"),
+        ("İnşaat Sektörü Davranış Skorkartı v1.0", "İnşaat", 0.58, 0.56, "Ahmet Yılmaz"),
+    ]
+    new_davranis = []
+    for name, ptype, g_dev, g_cur, owner in _davranis_specs:
+        m = ModelInventory(
+            model_name=name,
+            scorecard_category="Davranış",
+            product_type=ptype,
+            gini_development=g_dev,
+            gini_train=g_dev,
+            gini_cv=round(g_dev - 0.03, 2),
+            gini_itt=round(g_dev - 0.02, 2),
+            gini_oot=round(g_dev - 0.04, 2),
+            gini_validation=round(g_dev - 0.04, 2),
+            gini_current=g_cur,
+            status="active",
+            owner=owner,
+            psi_flag=False,
+            alert_work_started=False,
+            calibration_status="ok",
+        )
+        new_davranis.append(m)
+
+    db.session.add_all([m1, m2, m3, m4, m5, m6, m7] + new_davranis)
     db.session.flush()
 
     # ── Technical Guides ──
@@ -366,6 +455,48 @@ def seed_db():
         # Model 2024-07'de emekliye ayrıldı, izleme sona erdi
     ])
 
+    # ── Gini History: Yeni Başvuru Modelleri ──
+    # M6: İhtiyaç Başvuru v2.1 (gini_dev=0.60)
+    _add_gini(m6.id, [
+        ("2024-Q1", 0.600, "Geliştirme dönemi", 20000),
+        ("2024-Q4", 0.560, "OOT Validasyon", 17000),
+        ("2025-04", 0.585, "Aylık izleme", 13200), ("2025-05", 0.583, "Aylık izleme", 12800),
+        ("2025-06", 0.581, "Aylık izleme", 13100), ("2025-07", 0.579, "Aylık izleme", 13300),
+        ("2025-08", 0.577, "Aylık izleme", 12700), ("2025-09", 0.575, "Aylık izleme", 13000),
+        ("2025-10", 0.574, "Aylık izleme", 13200), ("2025-11", 0.573, "Aylık izleme", 12800),
+        ("2025-12", 0.572, "Aylık izleme", 12500), ("2026-01", 0.571, "Aylık izleme", 13100),
+        ("2026-02", 0.570, "Aylık izleme", 12700), ("2026-03", 0.570, "Aylık izleme", 13000),
+    ])
+
+    # M7: Oto Başvuru v2.0 (gini_dev=0.54)
+    _add_gini(m7.id, [
+        ("2024-Q3", 0.540, "Geliştirme dönemi", 14000),
+        ("2025-Q1", 0.500, "OOT Validasyon", 11000),
+        ("2025-01", 0.525, "Aylık izleme", 7200), ("2025-02", 0.523, "Aylık izleme", 6900),
+        ("2025-03", 0.521, "Aylık izleme", 7100), ("2025-04", 0.520, "Aylık izleme", 7300),
+        ("2025-05", 0.518, "Aylık izleme", 6800), ("2025-06", 0.517, "Aylık izleme", 7000),
+        ("2025-07", 0.516, "Aylık izleme", 7200), ("2025-08", 0.515, "Aylık izleme", 6900),
+        ("2025-09", 0.514, "Aylık izleme", 7100), ("2025-10", 0.513, "Aylık izleme", 7200),
+        ("2025-11", 0.512, "Aylık izleme", 6900), ("2025-12", 0.511, "Aylık izleme", 6600),
+        ("2026-01", 0.510, "Aylık izleme", 7100), ("2026-02", 0.511, "Aylık izleme", 6800),
+        ("2026-03", 0.510, "Aylık izleme", 7000),
+    ])
+
+    # Gini History: Yeni Davranış Modelleri (her biri için 6 aylık izleme)
+    for i, m in enumerate(new_davranis):
+        g_dev = _davranis_specs[i][2]
+        g_cur = _davranis_specs[i][3]
+        g_start = round(g_dev - 0.02, 4)
+        step = round((g_start - g_cur) / 5, 4) if g_start != g_cur else 0
+        _add_gini(m.id, [
+            ("2025-10", round(g_start, 4), "Aylık izleme", 12000),
+            ("2025-11", round(g_start - step, 4), "Aylık izleme", 11500),
+            ("2025-12", round(g_start - step * 2, 4), "Aylık izleme", 11800),
+            ("2026-01", round(g_start - step * 3, 4), "Aylık izleme", 12200),
+            ("2026-02", round(g_start - step * 4, 4), "Aylık izleme", 11700),
+            ("2026-03", round(g_cur, 4), "Aylık izleme", 12000),
+        ])
+
     # ── Geliştirme Projeleri ──
     p1 = DevelopmentProject(
         project_name="Tüketici Başvuru Skorkartı v4.0 Geliştirme",
@@ -390,15 +521,15 @@ def seed_db():
         description="KMH segmenti için yeni davranışsal skor modeli geliştirmesi.",
     )
     p3 = DevelopmentProject(
-        project_name="Konut Başvuru Skorkartı Yenileme",
-        scorecard_category="Başvuru",
-        product_type="Konut",
+        project_name="Kredi Kartı Davranış Skorkartı v2.0",
+        scorecard_category="Davranış",
+        product_type="Kredi Kartı",
         owner="Elif Demir",
         status="in_progress",
         priority="critical",
         start_date=date(2025, 7, 1),
         target_end_date=date(2026, 1, 31),
-        description="Performans düşüşü olan konut kredisi başvuru skorkartının yenilenmesi.",
+        description="Kredi kartı davranış skorkartının yeni versiyonunun geliştirilmesi.",
     )
     db.session.add_all([p1, p2, p3])
     db.session.flush()
