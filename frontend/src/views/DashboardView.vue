@@ -1,77 +1,69 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Bar } from 'vue-chartjs'
-import {
-  Chart as ChartJS, CategoryScale, LinearScale, BarElement,
-  Title, Tooltip, Legend
-} from 'chart.js'
 import { dashboardApi } from '../api'
 
 const router = useRouter()
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
-
-const summary = ref({ models: {}, development: {} })
+const summary  = ref({ models: {}, development: {} })
 const giniData = ref({ basvuru: [], davranis: [] })
 const progressData = ref([])
-const giniAlerts = ref([])
+const giniAlerts   = ref([])
 const initialLoading = ref(true)
 
-const basvuruChartData = computed(() => {
-  const data = giniData.value.basvuru || []
-  if (!data.length) return null
-  return {
-    labels: data.map(m => m.model_name),
-    datasets: [
-      {
-        label: 'Geliştirme Gini',
-        data: data.map(m => m.gini_development != null ? +(m.gini_development * 100).toFixed(1) : null),
-        backgroundColor: 'rgba(59, 130, 246, 0.7)',
-      },
-      {
-        label: 'Güncel Gini',
-        data: data.map(m => m.gini_current != null ? +(m.gini_current * 100).toFixed(1) : null),
-        backgroundColor: 'rgba(245, 158, 11, 0.7)',
-      },
-    ],
-  }
+// ── Alert lookup: model_id → alert entry ──
+const alertByModelId = computed(() => {
+  const map = {}
+  for (const a of giniAlerts.value) map[a.model_id] = a
+  return map
 })
 
-const davranisChartData = computed(() => {
-  const data = giniData.value.davranis || []
-  if (!data.length) return null
-  return {
-    labels: data.map(m => m.model_name),
-    datasets: [
-      {
-        label: 'Geliştirme Gini',
-        data: data.map(m => m.gini_development != null ? +(m.gini_development * 100).toFixed(1) : null),
-        backgroundColor: 'rgba(59, 130, 246, 0.7)',
-      },
-      {
-        label: 'Güncel Gini',
-        data: data.map(m => m.gini_current != null ? +(m.gini_current * 100).toFixed(1) : null),
-        backgroundColor: 'rgba(245, 158, 11, 0.7)',
-      },
-    ],
-  }
+// ── Discriminatory Power severity ──
+const dpSeverity = computed(() => {
+  if (giniAlerts.value.some(a => a.gini_alert)) return 'critical'
+  if (giniAlerts.value.some(a => a.psi_flag))   return 'warning'
+  return 'ok'
 })
 
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: { legend: { position: 'bottom' } },
-  scales: {
-    y: {
-      min: 0,
-      ticks: { callback: v => v + '%' },
-    },
-  },
+// ── Calibration severity (from summary counts) ──
+const calSeverity = computed(() => {
+  if (summary.value.models?.cal_critical > 0) return 'critical'
+  if (summary.value.models?.cal_warning  > 0) return 'warning'
+  return 'ok'
+})
+
+// severity → card style mapping
+function severityCard(sev) {
+  if (sev === 'critical') return { border: '1.5px solid #fca5a5', background: '#fff1f2' }
+  if (sev === 'warning')  return { border: '1.5px solid #fde68a', background: '#fffbeb' }
+  return { border: '1.5px solid #bbf7d0', background: '#f0fdf4' }
+}
+function severityIcon(sev) {
+  if (sev === 'critical') return { icon: 'pi pi-times-circle', color: '#ef4444' }
+  if (sev === 'warning')  return { icon: 'pi pi-exclamation-triangle', color: '#f59e0b' }
+  return { icon: 'pi pi-check-circle', color: '#10b981' }
+}
+function severityLabel(sev) {
+  if (sev === 'critical') return 'Aksiyon Alınmalı'
+  if (sev === 'warning')  return 'Takip Edilmeli'
+  return 'Sorun Yok'
+}
+function severityTextColor(sev) {
+  if (sev === 'critical') return '#b91c1c'
+  if (sev === 'warning')  return '#92400e'
+  return '#166534'
 }
 
+// giniAlerts model'leri (yalnızca gini_alert olanlar)
 const giniAlertList = computed(() => giniAlerts.value.filter(a => a.gini_alert))
-const psiAlertList = computed(() => giniAlerts.value.filter(a => a.psi_flag && !a.gini_alert))
+
+// Gini segment helpers
+function modelAlert(modelId) { return alertByModelId.value[modelId] || null }
+
+function giniDiff(m) {
+  if (m.gini_development == null || m.gini_current == null) return null
+  return m.gini_current - m.gini_development
+}
 
 onMounted(async () => {
   try {
@@ -81,11 +73,10 @@ onMounted(async () => {
       dashboardApi.getDevelopmentProgress(),
       dashboardApi.getGiniAlerts(),
     ])
-
-    summary.value = summaryRes.data
-    giniData.value = giniRes.data
+    summary.value      = summaryRes.data
+    giniData.value     = giniRes.data
     progressData.value = progressRes.data
-    giniAlerts.value = alertsRes.data
+    giniAlerts.value   = alertsRes.data
   } catch (err) {
     console.error('Dashboard load error:', err)
   } finally {
@@ -96,18 +87,16 @@ onMounted(async () => {
 
 <template>
   <div>
-    <div class="page-header">
-      <h2>Dashboard</h2>
-    </div>
+    <div class="page-header"><h2>Dashboard</h2></div>
     <div class="page-body">
 
-      <!-- ── Özet Kartlar ── -->
-      <div style="margin-bottom: 8px; font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em;">
-        Mevcut Skorkartlar
-      </div>
-      <div class="stats-grid" style="margin-bottom: 24px;">
+      <!-- ══ Mevcut Skorkartlar ══ -->
+      <div style="margin-bottom: 8px; font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em;">Mevcut Skorkartlar</div>
+      <div class="stats-grid" style="margin-bottom: 32px;">
+
+        <!-- 1. Aktif Model Sayısı -->
         <div class="stat-card info">
-          <div class="stat-label">Toplam Aktif Model</div>
+          <div class="stat-label">Aktif Model</div>
           <div class="stat-value">{{ summary.models?.active || 0 }}</div>
           <div class="stat-detail">
             <span style="color: #3b82f6;">{{ summary.models?.basvuru || 0 }} Başvuru</span>
@@ -115,28 +104,49 @@ onMounted(async () => {
             <span style="color: #10b981;">{{ summary.models?.davranis || 0 }} Davranış</span>
           </div>
         </div>
-        <div class="stat-card warning">
-          <div class="stat-label">İnceleme Bekleyen</div>
-          <div class="stat-value">{{ summary.models?.under_review || 0 }}</div>
-        </div>
-        <div class="stat-card danger">
-          <div class="stat-label">Gini Uyarısı</div>
-          <div class="stat-value">{{ giniAlertList.length }}</div>
-          <div class="stat-detail" v-if="summary.models?.psi_flag_count">
-            {{ summary.models.psi_flag_count }} PSI flag
+
+        <!-- 2. Discriminatory Power Alert -->
+        <div class="stat-card" :style="severityCard(dpSeverity)">
+          <div class="stat-label" style="display: flex; align-items: center; gap: 5px;">
+            <i :class="severityIcon(dpSeverity).icon" :style="{ color: severityIcon(dpSeverity).color, fontSize: '0.85rem' }"></i>
+            DP Alert
+          </div>
+          <div class="stat-value" :style="{ color: severityTextColor(dpSeverity), fontSize: '1.1rem', fontWeight: 700 }">
+            {{ severityLabel(dpSeverity) }}
+          </div>
+          <div class="stat-detail" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
+            <span v-if="giniAlertList.length" style="font-size: 0.7rem; background: #fee2e2; color: #b91c1c; padding: 1px 6px; border-radius: 10px;">
+              {{ giniAlertList.length }} Gini alert
+            </span>
+            <span v-if="summary.models?.psi_flag_count" style="font-size: 0.7rem; background: #fef3c7; color: #92400e; padding: 1px 6px; border-radius: 10px;">
+              {{ summary.models.psi_flag_count }} PSI flag
+            </span>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">PSI Flag</div>
-          <div class="stat-value" :style="{ color: summary.models?.psi_flag_count ? '#f59e0b' : '#64748b' }">
-            {{ summary.models?.psi_flag_count || 0 }}
+
+        <!-- 3. Calibration Alert -->
+        <div class="stat-card" :style="severityCard(calSeverity)">
+          <div class="stat-label" style="display: flex; align-items: center; gap: 5px;">
+            <i :class="severityIcon(calSeverity).icon" :style="{ color: severityIcon(calSeverity).color, fontSize: '0.85rem' }"></i>
+            Calibration Alert
+          </div>
+          <div class="stat-value" :style="{ color: severityTextColor(calSeverity), fontSize: '1.1rem', fontWeight: 700 }">
+            {{ severityLabel(calSeverity) }}
+          </div>
+          <div class="stat-detail" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
+            <span v-if="summary.models?.cal_critical" style="font-size: 0.7rem; background: #fee2e2; color: #b91c1c; padding: 1px 6px; border-radius: 10px;">
+              {{ summary.models.cal_critical }} kritik
+            </span>
+            <span v-if="summary.models?.cal_warning" style="font-size: 0.7rem; background: #fef3c7; color: #92400e; padding: 1px 6px; border-radius: 10px;">
+              {{ summary.models.cal_warning }} takip
+            </span>
           </div>
         </div>
+
       </div>
 
-      <div style="margin-bottom: 8px; font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em;">
-        Geliştirilen Skorkartlar
-      </div>
+      <!-- ══ Geliştirilen Skorkartlar ══ -->
+      <div style="margin-bottom: 8px; font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em;">Geliştirilen Skorkartlar</div>
       <div class="stats-grid" style="margin-bottom: 32px;">
         <div class="stat-card success">
           <div class="stat-label">Aktif Projeler</div>
@@ -147,181 +157,186 @@ onMounted(async () => {
             <span style="color: #10b981;">{{ summary.development?.dev_davranis || 0 }} Davranış</span>
           </div>
         </div>
-        <div class="stat-card info">
-          <div class="stat-label">Tamamlanan</div>
-          <div class="stat-value">{{ summary.development?.completed_projects || 0 }}</div>
-        </div>
         <div class="stat-card danger">
           <div class="stat-label">Geciken Aşamalar</div>
           <div class="stat-value">{{ summary.development?.overdue_stages || 0 }}</div>
         </div>
       </div>
 
-      <!-- ── Alert Mekanizması ── -->
-      <div class="card" :style="giniAlertList.length > 0 ? 'border: 1.5px solid #fca5a5; margin-bottom: 24px;' : 'margin-bottom: 24px;'">
+      <!-- ══ Discriminatory Power İzleme ══ -->
+      <div class="card" style="margin-bottom: 24px;">
         <div class="card-header">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <i
-              :class="giniAlertList.length > 0 ? 'pi pi-exclamation-triangle' : 'pi pi-check-circle'"
-              :style="{ color: giniAlertList.length > 0 ? '#ef4444' : '#10b981', fontSize: '1.1rem' }"
-            ></i>
-            <h3 style="margin: 0;">Gini Uyarıları</h3>
-          </div>
+          <h3>Discriminatory Power İzleme</h3>
           <span style="font-size: 0.78rem; color: #64748b;">
-            Başvuru &lt; 50% · Davranış &lt; 70% · Son 3 ayda ≥5pp ardışık sapma
+            Başvuru &lt;50% · Davranış &lt;70% · Ardışık ≥5pp sapma · PSI
           </span>
         </div>
-        <div class="card-body">
-          <div v-if="giniAlertList.length > 0">
-            <div
-              v-for="alert in giniAlertList"
-              :key="alert.model_id"
-              class="gini-alert-row"
-              @click="router.push(`/models/${alert.model_id}`)"
-            >
-              <div class="gini-alert-header">
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                  <span class="gini-alert-name">{{ alert.model_name }}</span>
-                  <span class="status-badge" :class="alert.status">
-                    {{ alert.status === 'active' ? 'Aktif' : 'İnceleniyor' }}
+        <div class="card-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+
+          <!-- Başvuru segment -->
+          <div>
+            <div style="font-size: 0.72rem; text-transform: uppercase; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 10px;">
+              Başvuru
+            </div>
+            <div v-if="(giniData.basvuru || []).length" style="display: flex; flex-direction: column; gap: 8px;">
+              <div
+                v-for="m in giniData.basvuru"
+                :key="m.model_id"
+                :style="{
+                  background: modelAlert(m.model_id)?.gini_alert ? '#fff1f2' : '#f8fafc',
+                  border: modelAlert(m.model_id)?.gini_alert ? '1px solid #fca5a5' : '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  cursor: 'pointer',
+                }"
+                @click="router.push(`/models/${m.model_id}`)"
+              >
+                <!-- Model adı + badge'ler -->
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap;">
+                  <span style="font-size: 0.82rem; font-weight: 600; color: #1e293b;">{{ m.model_name }}</span>
+                  <span v-if="modelAlert(m.model_id)?.alert_work_started" style="background: #dbeafe; color: #1d4ed8; font-size: 0.65rem; padding: 1px 7px; border-radius: 10px; font-weight: 600;">
+                    <i class="pi pi-wrench"></i> Çalışma Başladı
                   </span>
-                  <!-- Üstüne çalışma başladı mı? -->
-                  <span
-                    v-if="alert.alert_work_started"
-                    style="background: #dbeafe; color: #1d4ed8; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; font-weight: 600;"
-                  >
-                    <i class="pi pi-wrench" style="font-size: 0.65rem;"></i> Çalışma Başladı
-                  </span>
-                  <!-- Alert sebepleri -->
-                  <span
-                    v-if="alert.alert_reason.includes('threshold_breach')"
-                    style="background: #fee2e2; color: #dc2626; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px;"
-                  >
-                    Eşik Altı ({{ alert.scorecard_category === 'Başvuru' ? '&lt;50%' : '&lt;70%' }})
-                  </span>
-                  <span
-                    v-if="alert.alert_reason.includes('consecutive_deviation')"
-                    style="background: #fff7ed; color: #c2410c; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px;"
-                  >
-                    Ardışık Sapma
-                  </span>
+                  <span v-if="modelAlert(m.model_id)?.alert_reason?.includes('threshold_breach')" style="background: #fee2e2; color: #dc2626; font-size: 0.65rem; padding: 1px 7px; border-radius: 10px;">Eşik Altı</span>
+                  <span v-if="modelAlert(m.model_id)?.alert_reason?.includes('consecutive_deviation')" style="background: #fff7ed; color: #c2410c; font-size: 0.65rem; padding: 1px 7px; border-radius: 10px;">Ardışık Sapma</span>
+                  <span v-if="m.psi_flag" style="background: #fef3c7; color: #92400e; font-size: 0.65rem; padding: 1px 7px; border-radius: 10px;">PSI</span>
                 </div>
-                <span
-                  v-if="alert.direction"
-                  class="gini-alert-direction"
-                  :class="alert.direction === 'drop' ? 'drop' : 'rise'"
-                >
-                  <i :class="alert.direction === 'drop' ? 'pi pi-arrow-down' : 'pi pi-arrow-up'"></i>
-                  {{ alert.direction === 'drop' ? 'Düşüş' : 'Artış' }}
-                </span>
-              </div>
-              <div class="gini-alert-body">
-                <div class="gini-alert-ref">
-                  Geliştirme: <strong>{{ alert.gini_development != null ? (alert.gini_development * 100).toFixed(1) + '%' : '-' }}</strong>
-                  &nbsp;·&nbsp;
-                  Güncel: <strong :style="{ color: alert.gini_current < alert.gini_threshold ? '#ef4444' : '#374151' }">
-                    {{ alert.gini_current != null ? (alert.gini_current * 100).toFixed(1) + '%' : '-' }}
-                  </strong>
-                  &nbsp;·&nbsp;
-                  Eşik: <strong>{{ (alert.gini_threshold * 100).toFixed(0) }}%</strong>
-                  &nbsp;·&nbsp; {{ alert.scorecard_category }}
-                </div>
-                <div v-if="alert.last3_periods.length" class="gini-alert-months">
-                  <div
-                    v-for="(period, i) in alert.last3_periods"
-                    :key="period"
-                    class="gini-alert-month"
-                  >
-                    <span class="gini-month-label">{{ period }}</span>
-                    <span class="gini-month-value">{{ (alert.last3_values[i] * 100).toFixed(1) }}%</span>
-                    <span class="gini-month-diff" :class="alert.direction">
-                      {{ alert.direction === 'drop' ? '-' : '+' }}{{ (Math.abs(alert.last3_diffs[i]) * 100).toFixed(1) }}pp
-                    </span>
+                <!-- Gini değerleri -->
+                <div style="display: flex; gap: 16px;">
+                  <div style="text-align: center;">
+                    <div style="font-size: 0.65rem; color: #94a3b8; margin-bottom: 2px;">Geliştirme</div>
+                    <div style="font-size: 1rem; font-weight: 700; color: #1d4ed8;">
+                      {{ m.gini_development != null ? (m.gini_development * 100).toFixed(1) + '%' : '-' }}
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: center; color: #cbd5e1; font-size: 0.9rem;">→</div>
+                  <div style="text-align: center;">
+                    <div style="font-size: 0.65rem; color: #94a3b8; margin-bottom: 2px;">Güncel</div>
+                    <div style="font-size: 1rem; font-weight: 700;"
+                      :style="{ color: modelAlert(m.model_id)?.gini_alert ? '#ef4444' : (giniDiff(m) >= 0 ? '#10b981' : '#f59e0b') }">
+                      {{ m.gini_current != null ? (m.gini_current * 100).toFixed(1) + '%' : '-' }}
+                    </div>
+                  </div>
+                  <div v-if="giniDiff(m) != null" style="display: flex; align-items: center; font-size: 0.72rem; margin-left: 4px;"
+                    :style="{ color: giniDiff(m) >= 0 ? '#10b981' : '#ef4444' }">
+                    <i :class="giniDiff(m) >= 0 ? 'pi pi-arrow-up' : 'pi pi-arrow-down'" style="font-size: 0.65rem;"></i>
+                    {{ (Math.abs(giniDiff(m)) * 100).toFixed(1) }}pp
                   </div>
                 </div>
               </div>
             </div>
+            <div v-else class="empty-state" style="padding: 16px 0;"><p>Veri yok</p></div>
           </div>
-          <div v-else class="empty-state" style="padding: 24px 0;">
-            <i class="pi pi-check-circle" style="color: #10b981;"></i>
-            <p style="color: #10b981;">Gini uyarısı yok</p>
-          </div>
-        </div>
-      </div>
 
-      <!-- ── PSI Flag Listesi (bağımsız) ── -->
-      <div v-if="psiAlertList.length > 0" class="card" style="border: 1.5px solid #fde68a; margin-bottom: 24px;">
-        <div class="card-header">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <i class="pi pi-flag" style="color: #f59e0b; font-size: 1.1rem;"></i>
-            <h3 style="margin: 0;">PSI Uyarısı</h3>
+          <!-- Davranış segment -->
+          <div>
+            <div style="font-size: 0.72rem; text-transform: uppercase; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 10px;">
+              Davranış
+            </div>
+            <div v-if="(giniData.davranis || []).length" style="display: flex; flex-direction: column; gap: 8px;">
+              <div
+                v-for="m in giniData.davranis"
+                :key="m.model_id"
+                :style="{
+                  background: modelAlert(m.model_id)?.gini_alert ? '#fff1f2' : '#f8fafc',
+                  border: modelAlert(m.model_id)?.gini_alert ? '1px solid #fca5a5' : '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  cursor: 'pointer',
+                }"
+                @click="router.push(`/models/${m.model_id}`)"
+              >
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap;">
+                  <span style="font-size: 0.82rem; font-weight: 600; color: #1e293b;">{{ m.model_name }}</span>
+                  <span v-if="modelAlert(m.model_id)?.alert_work_started" style="background: #dbeafe; color: #1d4ed8; font-size: 0.65rem; padding: 1px 7px; border-radius: 10px; font-weight: 600;">
+                    <i class="pi pi-wrench"></i> Çalışma Başladı
+                  </span>
+                  <span v-if="modelAlert(m.model_id)?.alert_reason?.includes('threshold_breach')" style="background: #fee2e2; color: #dc2626; font-size: 0.65rem; padding: 1px 7px; border-radius: 10px;">Eşik Altı</span>
+                  <span v-if="modelAlert(m.model_id)?.alert_reason?.includes('consecutive_deviation')" style="background: #fff7ed; color: #c2410c; font-size: 0.65rem; padding: 1px 7px; border-radius: 10px;">Ardışık Sapma</span>
+                  <span v-if="m.psi_flag" style="background: #fef3c7; color: #92400e; font-size: 0.65rem; padding: 1px 7px; border-radius: 10px;">PSI</span>
+                </div>
+                <div style="display: flex; gap: 16px;">
+                  <div style="text-align: center;">
+                    <div style="font-size: 0.65rem; color: #94a3b8; margin-bottom: 2px;">Geliştirme</div>
+                    <div style="font-size: 1rem; font-weight: 700; color: #1d4ed8;">
+                      {{ m.gini_development != null ? (m.gini_development * 100).toFixed(1) + '%' : '-' }}
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: center; color: #cbd5e1; font-size: 0.9rem;">→</div>
+                  <div style="text-align: center;">
+                    <div style="font-size: 0.65rem; color: #94a3b8; margin-bottom: 2px;">Güncel</div>
+                    <div style="font-size: 1rem; font-weight: 700;"
+                      :style="{ color: modelAlert(m.model_id)?.gini_alert ? '#ef4444' : (giniDiff(m) >= 0 ? '#10b981' : '#f59e0b') }">
+                      {{ m.gini_current != null ? (m.gini_current * 100).toFixed(1) + '%' : '-' }}
+                    </div>
+                  </div>
+                  <div v-if="giniDiff(m) != null" style="display: flex; align-items: center; font-size: 0.72rem; margin-left: 4px;"
+                    :style="{ color: giniDiff(m) >= 0 ? '#10b981' : '#ef4444' }">
+                    <i :class="giniDiff(m) >= 0 ? 'pi pi-arrow-up' : 'pi pi-arrow-down'" style="font-size: 0.65rem;"></i>
+                    {{ (Math.abs(giniDiff(m)) * 100).toFixed(1) }}pp
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="empty-state" style="padding: 16px 0;"><p>Veri yok</p></div>
           </div>
-          <span style="font-size: 0.78rem; color: #64748b;">Sadece PSI flag olan modeller (Gini alertten bağımsız)</span>
+
         </div>
-        <div class="card-body">
+
+        <!-- Alert detayları (gini_alert olanlar) -->
+        <div v-if="giniAlertList.length" style="border-top: 1px solid #f1f5f9; margin-top: 16px; padding-top: 16px;">
+          <div style="font-size: 0.72rem; text-transform: uppercase; color: #ef4444; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+            <i class="pi pi-exclamation-triangle"></i> Alert Detayları
+          </div>
           <div
-            v-for="alert in psiAlertList"
-            :key="'psi-' + alert.model_id"
+            v-for="alert in giniAlertList"
+            :key="'det-' + alert.model_id"
             class="gini-alert-row"
             @click="router.push(`/models/${alert.model_id}`)"
           >
             <div class="gini-alert-header">
-              <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 <span class="gini-alert-name">{{ alert.model_name }}</span>
-                <span style="background: #fef3c7; color: #92400e; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; font-weight: 600;">
-                  PSI Flag
+                <span v-if="alert.alert_reason.includes('threshold_breach')" style="background: #fee2e2; color: #dc2626; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px;">
+                  Eşik Altı ({{ alert.scorecard_category === 'Başvuru' ? '<50%' : '<70%' }})
                 </span>
+                <span v-if="alert.alert_reason.includes('consecutive_deviation')" style="background: #fff7ed; color: #c2410c; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px;">Ardışık Sapma</span>
                 <span v-if="alert.alert_work_started" style="background: #dbeafe; color: #1d4ed8; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; font-weight: 600;">
                   <i class="pi pi-wrench" style="font-size: 0.65rem;"></i> Çalışma Başladı
                 </span>
               </div>
-              <span style="font-size: 0.8rem; color: #64748b;">{{ alert.scorecard_category }} · {{ alert.product_type }}</span>
+              <span v-if="alert.direction" class="gini-alert-direction" :class="alert.direction">
+                <i :class="alert.direction === 'drop' ? 'pi pi-arrow-down' : 'pi pi-arrow-up'"></i>
+                {{ alert.direction === 'drop' ? 'Düşüş' : 'Artış' }}
+              </span>
+            </div>
+            <div class="gini-alert-body">
+              <div class="gini-alert-ref">
+                Geliştirme: <strong>{{ alert.gini_development != null ? (alert.gini_development * 100).toFixed(1) + '%' : '-' }}</strong>
+                &nbsp;·&nbsp;
+                Güncel: <strong :style="{ color: alert.gini_current < alert.gini_threshold ? '#ef4444' : '#374151' }">
+                  {{ alert.gini_current != null ? (alert.gini_current * 100).toFixed(1) + '%' : '-' }}
+                </strong>
+                &nbsp;·&nbsp; Eşik: <strong>{{ (alert.gini_threshold * 100).toFixed(0) }}%</strong>
+                &nbsp;·&nbsp; {{ alert.scorecard_category }}
+              </div>
+              <div v-if="alert.last3_periods.length" class="gini-alert-months">
+                <div v-for="(period, i) in alert.last3_periods" :key="period" class="gini-alert-month">
+                  <span class="gini-month-label">{{ period }}</span>
+                  <span class="gini-month-value">{{ (alert.last3_values[i] * 100).toFixed(1) }}%</span>
+                  <span class="gini-month-diff" :class="alert.direction">
+                    {{ alert.direction === 'drop' ? '-' : '+' }}{{ (Math.abs(alert.last3_diffs[i]) * 100).toFixed(1) }}pp
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ── Gini Karşılaştırma: Başvuru ── -->
-      <div class="card" style="margin-bottom: 24px;">
-        <div class="card-header">
-          <h3>Başvuru Modelleri — Geliştirme vs Güncel Gini</h3>
-        </div>
-        <div class="card-body" style="height: 280px;">
-          <Bar
-            v-if="basvuruChartData"
-            :data="basvuruChartData"
-            :options="chartOptions"
-          />
-          <div v-else class="empty-state">
-            <i class="pi pi-chart-bar"></i>
-            <p>Başvuru modeli verisi yok</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Gini Karşılaştırma: Davranış ── -->
-      <div class="card" style="margin-bottom: 24px;">
-        <div class="card-header">
-          <h3>Davranış Modelleri — Geliştirme vs Güncel Gini</h3>
-        </div>
-        <div class="card-body" style="height: 280px;">
-          <Bar
-            v-if="davranisChartData"
-            :data="davranisChartData"
-            :options="chartOptions"
-          />
-          <div v-else class="empty-state">
-            <i class="pi pi-chart-bar"></i>
-            <p>Davranış modeli verisi yok</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Geliştirme İlerleme Durumu (en altta) ── -->
+      <!-- ══ Geliştirme İlerleme Durumu ══ -->
       <div class="card">
-        <div class="card-header">
-          <h3>Geliştirme İlerleme Durumu</h3>
-        </div>
+        <div class="card-header"><h3>Geliştirme İlerleme Durumu</h3></div>
         <div class="card-body">
           <div v-if="progressData.length > 0">
             <div
@@ -333,13 +348,9 @@ onMounted(async () => {
               <div style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: center;">
                 <div>
                   <span style="font-weight: 600; font-size: 0.85rem;">{{ project.project_name }}</span>
-                  <span v-if="project.scorecard_category" style="margin-left: 8px; font-size: 0.75rem; color: #64748b;">
-                    {{ project.scorecard_category }}
-                  </span>
+                  <span v-if="project.scorecard_category" style="margin-left: 8px; font-size: 0.75rem; color: #64748b;">{{ project.scorecard_category }}</span>
                 </div>
-                <span style="font-size: 0.8rem; color: #64748b;">
-                  {{ project.owner }} · {{ project.progress }}%
-                </span>
+                <span style="font-size: 0.8rem; color: #64748b;">{{ project.owner }} · {{ project.progress }}%</span>
               </div>
               <div class="progress-bar-container">
                 <div class="progress-bar-fill" :style="{ width: project.progress + '%' }"></div>

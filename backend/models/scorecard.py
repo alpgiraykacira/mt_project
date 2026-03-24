@@ -33,6 +33,7 @@ class ModelInventory(db.Model):
     dependency_warning = db.Column(db.Text)   # Bağımlılık uyarısı (örn: konut/oto)
     psi_flag = db.Column(db.Boolean, default=False)          # PSI uyarı bayrağı
     alert_work_started = db.Column(db.Boolean, default=False)  # Alert üstüne çalışma başladı mı
+    calibration_status = db.Column(db.String(20), default="ok")  # ok | warning | critical
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc),
                            onupdate=lambda: datetime.now(timezone.utc))
@@ -72,6 +73,7 @@ class ModelInventory(db.Model):
             "dependency_warning": self.dependency_warning,
             "psi_flag": self.psi_flag,
             "alert_work_started": self.alert_work_started,
+            "calibration_status": self.calibration_status or "ok",
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
