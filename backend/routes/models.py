@@ -81,6 +81,7 @@ def create_model():
         dependency_warning=data.get("dependency_warning"),
         psi_flag=data.get("psi_flag", False),
         alert_work_started=data.get("alert_work_started", False),
+        calibration_status=data.get("calibration_status", "ok"),
     )
     db.session.add(model)
     db.session.commit()
@@ -116,7 +117,7 @@ def update_model(model_id):
                    "target_variable", "gini_development", "gini_train", "gini_cv",
                    "gini_itt", "gini_oot", "gini_validation", "gini_current", "final_score",
                    "status", "owner", "description", "connected_processes", "dependency_warning",
-                   "psi_flag", "alert_work_started"]:
+                   "psi_flag", "alert_work_started", "calibration_status"]:
         if field in data:
             setattr(model, field, data[field])
 

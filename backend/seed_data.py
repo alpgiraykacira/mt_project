@@ -35,6 +35,7 @@ def seed_db():
         connected_processes="Bu modelin servisi FPD (First Payment Default) modelinde de girdi olarak kullanılmaktadır.",
         psi_flag=False,
         alert_work_started=False,
+        calibration_status="ok",
     )
     m2 = ModelInventory(
         model_name="KMH Davranış Skorkartı v2.0",
@@ -60,6 +61,7 @@ def seed_db():
         description="KMH (Kredili Mevduat Hesabı) davranışsal skor modeli.",
         psi_flag=True,
         alert_work_started=True,
+        calibration_status="warning",
     )
     m3 = ModelInventory(
         model_name="Kredi Kartı Davranış Skorkartı v1.5",
@@ -85,6 +87,7 @@ def seed_db():
         description="Kredi kartı müşterileri için davranışsal skor modeli.",
         psi_flag=False,
         alert_work_started=False,
+        calibration_status="ok",
     )
     m4 = ModelInventory(
         model_name="Konut Başvuru Skorkartı v1.0",
@@ -111,6 +114,7 @@ def seed_db():
         dependency_warning="Bu ürün grubu düşük başvuru adedi nedeniyle Tüketici Başvuru Skorkartı altyapısını kullanan yardımcı bir modelden yararlanmaktadır. Söz konusu modelin kapatılması durumunda Konut skoru da sekteye uğrayabilir.",
         psi_flag=True,
         alert_work_started=False,
+        calibration_status="critical",
     )
     m5 = ModelInventory(
         model_name="Oto Başvuru Skorkartı v1.2",
@@ -136,6 +140,7 @@ def seed_db():
         dependency_warning="Oto ürün grubunda düşük adet arzı nedeniyle başka bir model servisinden yararlanılmaktadır. Bu bağımlı model kapatılırsa oto skoru da etkilenir.",
         psi_flag=False,
         alert_work_started=False,
+        calibration_status="ok",
     )
     db.session.add_all([m1, m2, m3, m4, m5])
     db.session.flush()

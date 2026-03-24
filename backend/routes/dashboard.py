@@ -40,9 +40,19 @@ def get_summary():
         ModelInventory.status.in_(["active", "under_review"]),
     ).count()
 
-    # Alert counts: Gini alert + PSI flag
+    # Alert counts: PSI flag
     psi_flag_count = ModelInventory.query.filter(
         ModelInventory.psi_flag == True,
+        ModelInventory.status.in_(["active", "under_review"]),
+    ).count()
+
+    # Calibration counts
+    cal_warning = ModelInventory.query.filter(
+        ModelInventory.calibration_status == "warning",
+        ModelInventory.status.in_(["active", "under_review"]),
+    ).count()
+    cal_critical = ModelInventory.query.filter(
+        ModelInventory.calibration_status == "critical",
         ModelInventory.status.in_(["active", "under_review"]),
     ).count()
 
@@ -76,6 +86,8 @@ def get_summary():
             "basvuru": basvuru_count,
             "davranis": davranis_count,
             "psi_flag_count": psi_flag_count,
+            "cal_warning": cal_warning,
+            "cal_critical": cal_critical,
         },
         "development": {
             "total_projects": total_projects,
@@ -105,6 +117,8 @@ def gini_overview():
             "product_type": m.product_type,
             "gini_development": m.gini_development,
             "gini_current": m.gini_current,
+            "psi_flag": m.psi_flag or False,
+            "calibration_status": m.calibration_status or "ok",
         }
         if m.scorecard_category == "Başvuru":
             basvuru.append(entry)
