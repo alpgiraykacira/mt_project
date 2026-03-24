@@ -57,6 +57,10 @@ function severityTextColor(sev) {
 // giniAlerts model'leri (yalnızca gini_alert olanlar)
 const giniAlertList = computed(() => giniAlerts.value.filter(a => a.gini_alert))
 
+const redFlags = computed(() => giniAlerts.value.filter(a => a.gini_alert).length)
+const yellowFlags = computed(() => giniAlerts.value.filter(a => !a.gini_alert && a.psi_flag).length)
+const greenFlags = computed(() => (summary.value.models?.active || 0) - redFlags.value - yellowFlags.value)
+
 // Gini segment helpers
 function modelAlert(modelId) { return alertByModelId.value[modelId] || null }
 
@@ -106,20 +110,17 @@ onMounted(async () => {
         </div>
 
         <!-- 2. Discriminatory Power Alert -->
-        <div class="stat-card" :style="severityCard(dpSeverity)">
-          <div class="stat-label" style="display: flex; align-items: center; gap: 5px;">
-            <i :class="severityIcon(dpSeverity).icon" :style="{ color: severityIcon(dpSeverity).color, fontSize: '0.85rem' }"></i>
-            DP Alert
-          </div>
-          <div class="stat-value" :style="{ color: severityTextColor(dpSeverity), fontSize: '1.1rem', fontWeight: 700 }">
-            {{ severityLabel(dpSeverity) }}
-          </div>
-          <div class="stat-detail" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
-            <span v-if="giniAlertList.length" style="font-size: 0.7rem; background: #fee2e2; color: #b91c1c; padding: 1px 6px; border-radius: 10px;">
-              {{ giniAlertList.length }} Gini alert
+        <div class="stat-card info">
+          <div class="stat-label">Discriminatory Power Alert</div>
+          <div class="stat-detail" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+            <span style="font-size: 0.75rem; background: #dcfce7; color: #166534; padding: 2px 10px; border-radius: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+              <i class="pi pi-circle-fill" style="font-size: 0.45rem; color: #22c55e;"></i> {{ greenFlags }}
             </span>
-            <span v-if="summary.models?.psi_flag_count" style="font-size: 0.7rem; background: #fef3c7; color: #92400e; padding: 1px 6px; border-radius: 10px;">
-              {{ summary.models.psi_flag_count }} PSI flag
+            <span style="font-size: 0.75rem; background: #fef3c7; color: #92400e; padding: 2px 10px; border-radius: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+              <i class="pi pi-circle-fill" style="font-size: 0.45rem; color: #f59e0b;"></i> {{ yellowFlags }}
+            </span>
+            <span style="font-size: 0.75rem; background: #fee2e2; color: #b91c1c; padding: 2px 10px; border-radius: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+              <i class="pi pi-circle-fill" style="font-size: 0.45rem; color: #ef4444;"></i> {{ redFlags }}
             </span>
           </div>
         </div>
@@ -166,9 +167,9 @@ onMounted(async () => {
       <!-- ══ Discriminatory Power İzleme ══ -->
       <div class="card" style="margin-bottom: 24px;">
         <div class="card-header">
-          <h3>Discriminatory Power İzleme</h3>
+          <h3>Model İzleme</h3>
           <span style="font-size: 0.78rem; color: #64748b;">
-            Başvuru &lt;50% · Davranış &lt;70% · Ardışık ≥5pp sapma · PSI
+            Başvuru &lt;50% · Davranış &lt;55% · Ardışık ≥5pp sapma · PSI
           </span>
         </div>
         <div class="card-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
@@ -182,26 +183,15 @@ onMounted(async () => {
               <div
                 v-for="m in giniData.basvuru"
                 :key="m.model_id"
-                :style="{
-                  background: modelAlert(m.model_id)?.gini_alert ? '#fff1f2' : '#f8fafc',
-                  border: modelAlert(m.model_id)?.gini_alert ? '1px solid #fca5a5' : '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  padding: '10px 14px',
-                  cursor: 'pointer',
-                }"
+                style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; cursor: pointer;"
                 @click="router.push(`/models/${m.model_id}`)"
               >
-                <!-- Model adı + badge'ler -->
                 <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap;">
                   <span style="font-size: 0.82rem; font-weight: 600; color: #1e293b;">{{ m.model_name }}</span>
-                  <span v-if="modelAlert(m.model_id)?.alert_work_started" style="background: #dbeafe; color: #1d4ed8; font-size: 0.65rem; padding: 1px 7px; border-radius: 10px; font-weight: 600;">
-                    <i class="pi pi-wrench"></i> Çalışma Başladı
+                  <span v-if="m.in_development" style="background: #dbeafe; color: #1d4ed8; font-size: 0.65rem; padding: 1px 7px; border-radius: 10px; font-weight: 600;">
+                    <i class="pi pi-sync" style="font-size: 0.55rem;"></i> Yeni Versiyon Geliştiriliyor
                   </span>
-                  <span v-if="modelAlert(m.model_id)?.alert_reason?.includes('threshold_breach')" style="background: #fee2e2; color: #dc2626; font-size: 0.65rem; padding: 1px 7px; border-radius: 10px;">Eşik Altı</span>
-                  <span v-if="modelAlert(m.model_id)?.alert_reason?.includes('consecutive_deviation')" style="background: #fff7ed; color: #c2410c; font-size: 0.65rem; padding: 1px 7px; border-radius: 10px;">Ardışık Sapma</span>
-                  <span v-if="m.psi_flag" style="background: #fef3c7; color: #92400e; font-size: 0.65rem; padding: 1px 7px; border-radius: 10px;">PSI</span>
                 </div>
-                <!-- Gini değerleri -->
                 <div style="display: flex; gap: 16px;">
                   <div style="text-align: center;">
                     <div style="font-size: 0.65rem; color: #94a3b8; margin-bottom: 2px;">Geliştirme</div>
@@ -212,15 +202,9 @@ onMounted(async () => {
                   <div style="display: flex; align-items: center; color: #cbd5e1; font-size: 0.9rem;">→</div>
                   <div style="text-align: center;">
                     <div style="font-size: 0.65rem; color: #94a3b8; margin-bottom: 2px;">Güncel</div>
-                    <div style="font-size: 1rem; font-weight: 700;"
-                      :style="{ color: modelAlert(m.model_id)?.gini_alert ? '#ef4444' : (giniDiff(m) >= 0 ? '#10b981' : '#f59e0b') }">
+                    <div style="font-size: 1rem; font-weight: 700; color: #374151;">
                       {{ m.gini_current != null ? (m.gini_current * 100).toFixed(1) + '%' : '-' }}
                     </div>
-                  </div>
-                  <div v-if="giniDiff(m) != null" style="display: flex; align-items: center; font-size: 0.72rem; margin-left: 4px;"
-                    :style="{ color: giniDiff(m) >= 0 ? '#10b981' : '#ef4444' }">
-                    <i :class="giniDiff(m) >= 0 ? 'pi pi-arrow-up' : 'pi pi-arrow-down'" style="font-size: 0.65rem;"></i>
-                    {{ (Math.abs(giniDiff(m)) * 100).toFixed(1) }}pp
                   </div>
                 </div>
               </div>
@@ -237,23 +221,14 @@ onMounted(async () => {
               <div
                 v-for="m in giniData.davranis"
                 :key="m.model_id"
-                :style="{
-                  background: modelAlert(m.model_id)?.gini_alert ? '#fff1f2' : '#f8fafc',
-                  border: modelAlert(m.model_id)?.gini_alert ? '1px solid #fca5a5' : '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  padding: '10px 14px',
-                  cursor: 'pointer',
-                }"
+                style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; cursor: pointer;"
                 @click="router.push(`/models/${m.model_id}`)"
               >
                 <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap;">
                   <span style="font-size: 0.82rem; font-weight: 600; color: #1e293b;">{{ m.model_name }}</span>
-                  <span v-if="modelAlert(m.model_id)?.alert_work_started" style="background: #dbeafe; color: #1d4ed8; font-size: 0.65rem; padding: 1px 7px; border-radius: 10px; font-weight: 600;">
-                    <i class="pi pi-wrench"></i> Çalışma Başladı
+                  <span v-if="m.in_development" style="background: #dbeafe; color: #1d4ed8; font-size: 0.65rem; padding: 1px 7px; border-radius: 10px; font-weight: 600;">
+                    <i class="pi pi-sync" style="font-size: 0.55rem;"></i> Yeni Versiyon Geliştiriliyor
                   </span>
-                  <span v-if="modelAlert(m.model_id)?.alert_reason?.includes('threshold_breach')" style="background: #fee2e2; color: #dc2626; font-size: 0.65rem; padding: 1px 7px; border-radius: 10px;">Eşik Altı</span>
-                  <span v-if="modelAlert(m.model_id)?.alert_reason?.includes('consecutive_deviation')" style="background: #fff7ed; color: #c2410c; font-size: 0.65rem; padding: 1px 7px; border-radius: 10px;">Ardışık Sapma</span>
-                  <span v-if="m.psi_flag" style="background: #fef3c7; color: #92400e; font-size: 0.65rem; padding: 1px 7px; border-radius: 10px;">PSI</span>
                 </div>
                 <div style="display: flex; gap: 16px;">
                   <div style="text-align: center;">
@@ -265,15 +240,9 @@ onMounted(async () => {
                   <div style="display: flex; align-items: center; color: #cbd5e1; font-size: 0.9rem;">→</div>
                   <div style="text-align: center;">
                     <div style="font-size: 0.65rem; color: #94a3b8; margin-bottom: 2px;">Güncel</div>
-                    <div style="font-size: 1rem; font-weight: 700;"
-                      :style="{ color: modelAlert(m.model_id)?.gini_alert ? '#ef4444' : (giniDiff(m) >= 0 ? '#10b981' : '#f59e0b') }">
+                    <div style="font-size: 1rem; font-weight: 700; color: #374151;">
                       {{ m.gini_current != null ? (m.gini_current * 100).toFixed(1) + '%' : '-' }}
                     </div>
-                  </div>
-                  <div v-if="giniDiff(m) != null" style="display: flex; align-items: center; font-size: 0.72rem; margin-left: 4px;"
-                    :style="{ color: giniDiff(m) >= 0 ? '#10b981' : '#ef4444' }">
-                    <i :class="giniDiff(m) >= 0 ? 'pi pi-arrow-up' : 'pi pi-arrow-down'" style="font-size: 0.65rem;"></i>
-                    {{ (Math.abs(giniDiff(m)) * 100).toFixed(1) }}pp
                   </div>
                 </div>
               </div>
@@ -284,7 +253,7 @@ onMounted(async () => {
         </div>
 
         <!-- Alert detayları (gini_alert olanlar) -->
-        <div v-if="giniAlertList.length" style="border-top: 1px solid #f1f5f9; margin-top: 16px; padding-top: 16px;">
+        <div v-if="giniAlertList.length" style="border-top: 1px solid #f1f5f9; margin-top: 16px; padding: 16px 20px 20px 20px;">
           <div style="font-size: 0.72rem; text-transform: uppercase; color: #ef4444; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
             <i class="pi pi-exclamation-triangle"></i> Alert Detayları
           </div>
@@ -298,7 +267,7 @@ onMounted(async () => {
               <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 <span class="gini-alert-name">{{ alert.model_name }}</span>
                 <span v-if="alert.alert_reason.includes('threshold_breach')" style="background: #fee2e2; color: #dc2626; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px;">
-                  Eşik Altı ({{ alert.scorecard_category === 'Başvuru' ? '<50%' : '<70%' }})
+                  Eşik Altı ({{ alert.scorecard_category === 'Başvuru' ? '<50%' : '<55%' }})
                 </span>
                 <span v-if="alert.alert_reason.includes('consecutive_deviation')" style="background: #fff7ed; color: #c2410c; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px;">Ardışık Sapma</span>
                 <span v-if="alert.alert_work_started" style="background: #dbeafe; color: #1d4ed8; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; font-weight: 600;">

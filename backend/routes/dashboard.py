@@ -11,7 +11,7 @@ dashboard_bp = Blueprint("dashboard", __name__)
 # Kategori bazlı Gini alert eşikleri
 GINI_ALERT_THRESHOLD = {
     "Başvuru": 0.50,
-    "Davranış": 0.70,
+    "Davranış": 0.55,
 }
 # Ardışık ay sayısı ve minimum puan sapması
 CONSECUTIVE_MONTHS = 3
@@ -107,6 +107,9 @@ def gini_overview():
     """Aktif modellerin Gini değerleri — Başvuru ve Davranış olarak ayrı döner."""
     models = ModelInventory.query.filter_by(status="active").all()
 
+    dev_projects = DevelopmentProject.query.filter_by(status="in_progress").all()
+    dev_set = {(p.scorecard_category, p.product_type) for p in dev_projects}
+
     basvuru = []
     davranis = []
     for m in models:
@@ -119,6 +122,7 @@ def gini_overview():
             "gini_current": m.gini_current,
             "psi_flag": m.psi_flag or False,
             "calibration_status": m.calibration_status or "ok",
+            "in_development": (m.scorecard_category, m.product_type) in dev_set,
         }
         if m.scorecard_category == "Başvuru":
             basvuru.append(entry)
