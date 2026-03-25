@@ -27,6 +27,7 @@ def list_projects():
     owner = request.args.get("owner")
     status = request.args.get("status")
     priority = request.args.get("priority")
+    scorecard_category = request.args.get("scorecard_category")
 
     if owner:
         query = query.filter(DevelopmentProject.owner == owner)
@@ -34,6 +35,8 @@ def list_projects():
         query = query.filter(DevelopmentProject.status == status)
     if priority:
         query = query.filter(DevelopmentProject.priority == priority)
+    if scorecard_category:
+        query = query.filter(DevelopmentProject.scorecard_category == scorecard_category)
 
     query = query.order_by(DevelopmentProject.updated_at.desc())
 

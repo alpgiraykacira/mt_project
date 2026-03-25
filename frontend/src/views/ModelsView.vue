@@ -20,8 +20,11 @@ const totalRecords = ref(0)
 const currentPage = ref(1)
 const rowsPerPage = ref(10)
 const initialLoading = ref(true)
+const tableLoading = ref(false)
 const showDialog = ref(false)
 const editMode = ref(false)
+
+let searchDebounceTimer = null
 
 const filterCategory = ref(null)
 const filterProductType = ref(null)
@@ -55,7 +58,7 @@ function getEmptyForm() {
 
 async function loadModels(page = currentPage.value) {
   try {
-    initialLoading.value = true
+    tableLoading.value = true
     const params = {
       page,
       per_page: rowsPerPage.value,
@@ -79,6 +82,7 @@ async function loadModels(page = currentPage.value) {
     toast.add({ severity: 'error', summary: 'Hata', detail: 'Modeller yüklenemedi', life: 3000 })
   } finally {
     initialLoading.value = false
+    tableLoading.value = false
   }
 }
 
@@ -89,6 +93,11 @@ function onPageChange(event) {
 
 function onFilterChange() {
   loadModels(1)
+}
+
+function onSearchInput() {
+  clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => loadModels(1), 300)
 }
 
 function openNew() {
@@ -172,7 +181,7 @@ onMounted(loadModels)
       <!-- Filters -->
       <div class="card">
         <div class="card-body" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
-          <InputText v-model="searchText" placeholder="Model ara..." style="width: 220px;" @input="onFilterChange" />
+          <InputText v-model="searchText" placeholder="Model ara..." style="width: 220px;" @input="onSearchInput" />
           <Select
             v-model="filterCategory"
             :options="scorecardCategories"
@@ -208,7 +217,7 @@ onMounted(loadModels)
         <div class="card-body data-table-wrapper">
           <DataTable
             :value="models"
-            :loading="initialLoading"
+            :loading="tableLoading"
             paginator
             :rows="rowsPerPage"
             :totalRecords="totalRecords"

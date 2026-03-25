@@ -27,7 +27,8 @@ const sidebarOpen = ref(false)
           :to="item.path"
           class="nav-item"
           @click="sidebarOpen = false"
-          exact-active-class="active"
+          active-class=""
+          :class="{ active: $route.path === item.path || (item.path !== '/' && $route.path.startsWith(item.path)) }"
         >
           <i :class="item.icon"></i>
           {{ item.label }}
