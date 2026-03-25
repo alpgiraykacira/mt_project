@@ -33,7 +33,11 @@ const searchText = ref('')
 
 const scorecardCategories = ['Başvuru', 'Davranış']
 const productTypes = ['KMH', 'Konut', 'Kredi Kartı', 'Oto', 'Tüketici']
-const statusOptions = ['active', 'retired', 'under_review']
+const statusOptions = [
+  { label: 'Aktif', value: 'active' },
+  { label: 'Emekli', value: 'retired' },
+  { label: 'İnceleniyor', value: 'under_review' },
+]
 
 const form = ref(getEmptyForm())
 
@@ -203,6 +207,8 @@ onMounted(loadModels)
           <Select
             v-model="filterStatus"
             :options="statusOptions"
+            optionLabel="label"
+            optionValue="value"
             placeholder="Durum"
             showClear
             style="width: 160px;"
@@ -329,7 +335,7 @@ onMounted(loadModels)
         </div>
         <div class="form-group">
           <label>Durum</label>
-          <Select v-model="form.status" :options="statusOptions" />
+          <Select v-model="form.status" :options="statusOptions" optionLabel="label" optionValue="value" />
         </div>
         <div class="form-group full-width">
           <label>Açıklama</label>

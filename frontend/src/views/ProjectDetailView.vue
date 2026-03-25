@@ -31,9 +31,24 @@ const taskForm = ref({ task_description: '' })
 const showEditDialog = ref(false)
 const editForm = ref({})
 
-const statusOptions = ['in_progress', 'completed', 'on_hold', 'cancelled']
-const stageStatusOptions = ['pending', 'in_progress', 'completed', 'blocked']
-const priorityOptions = ['low', 'medium', 'high', 'critical']
+const statusOptions = [
+  { label: 'Devam Ediyor', value: 'in_progress' },
+  { label: 'Tamamlandı', value: 'completed' },
+  { label: 'Beklemede', value: 'on_hold' },
+  { label: 'İptal', value: 'cancelled' },
+]
+const stageStatusOptions = [
+  { label: 'Bekliyor', value: 'pending' },
+  { label: 'Devam Ediyor', value: 'in_progress' },
+  { label: 'Tamamlandı', value: 'completed' },
+  { label: 'Engelli', value: 'blocked' },
+]
+const priorityOptions = [
+  { label: 'Düşük', value: 'low' },
+  { label: 'Orta', value: 'medium' },
+  { label: 'Yüksek', value: 'high' },
+  { label: 'Kritik', value: 'critical' },
+]
 const scorecardCategories = ['Başvuru', 'Davranış']
 const productTypes = ['KMH', 'Konut', 'Kredi Kartı', 'Oto', 'Tüketici']
 
@@ -274,9 +289,6 @@ onMounted(loadProject)
       <div class="card">
         <div class="card-header">
           <h3>Geliştirme Aşamaları</h3>
-          <button class="btn btn-primary btn-sm" @click="openStageDialog(null)">
-            <i class="pi pi-plus"></i> Aşama Ekle
-          </button>
         </div>
         <div class="card-body">
           <div v-if="flatStages.length">
@@ -316,6 +328,8 @@ onMounted(loadProject)
                     :modelValue="stage.status"
                     @update:modelValue="(val) => updateStageStatus(stage, val)"
                     :options="stageStatusOptions"
+                    optionLabel="label"
+                    optionValue="value"
                     style="width: 140px; font-size: 0.8rem;"
                   />
                   <button class="btn btn-sm btn-icon" style="background: none; color: #3b82f6; padding: 4px;" @click="openStageDialog(stage.id)" title="Alt aşama ekle">
@@ -422,11 +436,11 @@ onMounted(loadProject)
         </div>
         <div class="form-group">
           <label>Durum</label>
-          <Select v-model="editForm.status" :options="statusOptions" />
+          <Select v-model="editForm.status" :options="statusOptions" optionLabel="label" optionValue="value" />
         </div>
         <div class="form-group">
           <label>Öncelik</label>
-          <Select v-model="editForm.priority" :options="priorityOptions" />
+          <Select v-model="editForm.priority" :options="priorityOptions" optionLabel="label" optionValue="value" />
         </div>
         <div class="form-group">
           <label>Başlangıç Tarihi</label>
