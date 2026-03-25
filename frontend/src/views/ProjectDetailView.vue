@@ -105,7 +105,14 @@ async function saveStage() {
       ...stageForm.value,
       deadline: stageForm.value.deadline
         ? stageForm.value.deadline.toISOString().split('T')[0] : null,
-      order_index: project.value.stages?.length || 0,
+      order_index: (() => {
+        const parentId = stageForm.value.parent_id
+        if (parentId) {
+          const parent = flatStages.value.find(s => s.id === parentId)
+          return parent?.children?.length || 0
+        }
+        return project.value.stages?.length || 0
+      })(),
     }
     await developmentApi.createStage(projectId.value, data)
     showStageDialog.value = false
