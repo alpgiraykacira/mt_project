@@ -22,8 +22,18 @@ const filterStatus = ref(null)
 const filterCategory = ref(null)
 const owners = ref([])
 
-const statusOptions = ['in_progress', 'completed', 'on_hold', 'cancelled']
-const priorityOptions = ['low', 'medium', 'high', 'critical']
+const statusOptions = [
+  { label: 'Devam Ediyor', value: 'in_progress' },
+  { label: 'Tamamlandı', value: 'completed' },
+  { label: 'Beklemede', value: 'on_hold' },
+  { label: 'İptal', value: 'cancelled' },
+]
+const priorityOptions = [
+  { label: 'Düşük', value: 'low' },
+  { label: 'Orta', value: 'medium' },
+  { label: 'Yüksek', value: 'high' },
+  { label: 'Kritik', value: 'critical' },
+]
 const scorecardCategories = ['Başvuru', 'Davranış']
 const productTypes = ['KMH', 'Konut', 'Kredi Kartı', 'Oto', 'Tüketici']
 
@@ -157,6 +167,8 @@ onMounted(loadProjects)
           <Select
             v-model="filterStatus"
             :options="statusOptions"
+            optionLabel="label"
+            optionValue="value"
             placeholder="Durum"
             showClear
             style="width: 160px;"
@@ -243,7 +255,7 @@ onMounted(loadProjects)
         </div>
         <div class="form-group">
           <label>Öncelik</label>
-          <Select v-model="form.priority" :options="priorityOptions" />
+          <Select v-model="form.priority" :options="priorityOptions" optionLabel="label" optionValue="value" />
         </div>
         <div class="form-group">
           <label>Başlangıç Tarihi</label>
