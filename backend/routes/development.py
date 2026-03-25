@@ -178,11 +178,19 @@ def delete_stage(project_id, stage_id):
 def create_task(stage_id):
     db.get_or_404(DevelopmentStage, stage_id)
     data = request.get_json()
+    # Determine order_index: if not provided, append to the end
+    if "order_index" not in data:
+        max_order = db.session.query(db.func.max(StageTask.order_index)).filter(
+            StageTask.stage_id == stage_id
+        ).scalar()
+        next_order = (max_order + 1) if max_order is not None else 0
+    else:
+        next_order = data["order_index"]
     task = StageTask(
         stage_id=stage_id,
         task_description=data["task_description"],
         is_completed=data.get("is_completed", False),
-        order_index=data.get("order_index", 0),
+        order_index=next_order,
     )
     db.session.add(task)
     db.session.commit()
