@@ -37,12 +37,25 @@ const priorityOptions = ['low', 'medium', 'high', 'critical']
 const scorecardCategories = ['Başvuru', 'Davranış']
 const productTypes = ['KMH', 'Konut', 'Kredi Kartı', 'Oto', 'Tüketici']
 
-// Flatten hierarchical stages into a list with depth info
+// Compare stage_code values numerically (e.g. "3.2" < "3.3" < "4" < "8")
+function compareStageCode(a, b) {
+  const partsA = (a.stage_code || '').split('.').map(Number)
+  const partsB = (b.stage_code || '').split('.').map(Number)
+  for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+    const numA = partsA[i] ?? Infinity
+    const numB = partsB[i] ?? Infinity
+    if (numA !== numB) return numA - numB
+  }
+  return 0
+}
+
+// Flatten hierarchical stages into a list with depth info, sorted by stage_code
 const flatStages = computed(() => {
   if (!project.value?.stages) return []
   const result = []
   function walk(stages, depth) {
-    for (const stage of stages) {
+    const sorted = [...stages].sort(compareStageCode)
+    for (const stage of sorted) {
       result.push({ ...stage, depth })
       if (stage.children?.length) {
         walk(stage.children, depth + 1)
@@ -105,14 +118,6 @@ async function saveStage() {
       ...stageForm.value,
       deadline: stageForm.value.deadline
         ? stageForm.value.deadline.toISOString().split('T')[0] : null,
-      order_index: (() => {
-        const parentId = stageForm.value.parent_id
-        if (parentId) {
-          const parent = flatStages.value.find(s => s.id === parentId)
-          return parent?.children?.length || 0
-        }
-        return project.value.stages?.length || 0
-      })(),
     }
     await developmentApi.createStage(projectId.value, data)
     showStageDialog.value = false
