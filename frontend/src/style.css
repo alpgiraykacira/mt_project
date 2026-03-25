@@ -140,7 +140,6 @@ body {
 .stat-card .stat-label {
   font-size: 0.8rem;
   color: #64748b;
-  text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 600;
 }
