@@ -111,7 +111,7 @@ onMounted(async () => {
 
         <!-- 2. Discriminatory Power Alert -->
         <div class="stat-card info">
-          <div class="stat-label">Discriminatory Power Alert</div>
+          <div class="stat-label" style="text-transform: none;">Discriminatory Power Alert</div>
           <div class="stat-detail" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
             <span style="font-size: 0.75rem; background: #dcfce7; color: #166534; padding: 2px 10px; border-radius: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
               <i class="pi pi-circle-fill" style="font-size: 0.45rem; color: #22c55e;"></i> {{ greenFlags }}
@@ -169,10 +169,10 @@ onMounted(async () => {
         <div class="card-header">
           <h3>Model İzleme</h3>
           <span style="font-size: 0.78rem; color: #64748b;">
-            Başvuru &lt;50% · Davranış &lt;55% · Ardışık ≥5pp sapma · PSI
+            Başvuru &lt;50 · Davranış &lt;55 · Ardışık ≥5pp sapma · PSI
           </span>
         </div>
-        <div class="card-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+        <div class="card-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-height: 420px; overflow-y: auto;">
 
           <!-- Başvuru segment -->
           <div>
@@ -196,14 +196,14 @@ onMounted(async () => {
                   <div style="text-align: center;">
                     <div style="font-size: 0.65rem; color: #94a3b8; margin-bottom: 2px;">Geliştirme</div>
                     <div style="font-size: 1rem; font-weight: 700; color: #1d4ed8;">
-                      {{ m.gini_development != null ? (m.gini_development * 100).toFixed(1) + '%' : '-' }}
+                      {{ m.gini_development != null ? Math.round(m.gini_development * 100) : '-' }}
                     </div>
                   </div>
                   <div style="display: flex; align-items: center; color: #cbd5e1; font-size: 0.9rem;">→</div>
                   <div style="text-align: center;">
                     <div style="font-size: 0.65rem; color: #94a3b8; margin-bottom: 2px;">Güncel</div>
                     <div style="font-size: 1rem; font-weight: 700; color: #374151;">
-                      {{ m.gini_current != null ? (m.gini_current * 100).toFixed(1) + '%' : '-' }}
+                      {{ m.gini_current != null ? Math.round(m.gini_current * 100) : '-' }}
                     </div>
                   </div>
                 </div>
@@ -234,14 +234,14 @@ onMounted(async () => {
                   <div style="text-align: center;">
                     <div style="font-size: 0.65rem; color: #94a3b8; margin-bottom: 2px;">Geliştirme</div>
                     <div style="font-size: 1rem; font-weight: 700; color: #1d4ed8;">
-                      {{ m.gini_development != null ? (m.gini_development * 100).toFixed(1) + '%' : '-' }}
+                      {{ m.gini_development != null ? Math.round(m.gini_development * 100) : '-' }}
                     </div>
                   </div>
                   <div style="display: flex; align-items: center; color: #cbd5e1; font-size: 0.9rem;">→</div>
                   <div style="text-align: center;">
                     <div style="font-size: 0.65rem; color: #94a3b8; margin-bottom: 2px;">Güncel</div>
                     <div style="font-size: 1rem; font-weight: 700; color: #374151;">
-                      {{ m.gini_current != null ? (m.gini_current * 100).toFixed(1) + '%' : '-' }}
+                      {{ m.gini_current != null ? Math.round(m.gini_current * 100) : '-' }}
                     </div>
                   </div>
                 </div>
@@ -267,9 +267,12 @@ onMounted(async () => {
               <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 <span class="gini-alert-name">{{ alert.model_name }}</span>
                 <span v-if="alert.alert_reason.includes('threshold_breach')" style="background: #fee2e2; color: #dc2626; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px;">
-                  Eşik Altı ({{ alert.scorecard_category === 'Başvuru' ? '<50%' : '<55%' }})
+                  Eşik Altı ({{ alert.scorecard_category === 'Başvuru' ? '<50' : '<55' }})
                 </span>
                 <span v-if="alert.alert_reason.includes('consecutive_deviation')" style="background: #fff7ed; color: #c2410c; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px;">Ardışık Sapma</span>
+                <span v-if="alert.psi_flag" style="background: #fef3c7; color: #92400e; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; font-weight: 600;">
+                  <i class="pi pi-flag" style="font-size: 0.65rem;"></i> PSI Flag
+                </span>
                 <span v-if="alert.alert_work_started" style="background: #dbeafe; color: #1d4ed8; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; font-weight: 600;">
                   <i class="pi pi-wrench" style="font-size: 0.65rem;"></i> Çalışma Başladı
                 </span>
@@ -281,18 +284,18 @@ onMounted(async () => {
             </div>
             <div class="gini-alert-body">
               <div class="gini-alert-ref">
-                Geliştirme: <strong>{{ alert.gini_development != null ? (alert.gini_development * 100).toFixed(1) + '%' : '-' }}</strong>
+                Geliştirme: <strong>{{ alert.gini_development != null ? Math.round(alert.gini_development * 100) : '-' }}</strong>
                 &nbsp;·&nbsp;
                 Güncel: <strong :style="{ color: alert.gini_current < alert.gini_threshold ? '#ef4444' : '#374151' }">
-                  {{ alert.gini_current != null ? (alert.gini_current * 100).toFixed(1) + '%' : '-' }}
+                  {{ alert.gini_current != null ? Math.round(alert.gini_current * 100) : '-' }}
                 </strong>
-                &nbsp;·&nbsp; Eşik: <strong>{{ (alert.gini_threshold * 100).toFixed(0) }}%</strong>
+                &nbsp;·&nbsp; Eşik: <strong>{{ Math.round(alert.gini_threshold * 100) }}</strong>
                 &nbsp;·&nbsp; {{ alert.scorecard_category }}
               </div>
               <div v-if="alert.last3_periods.length" class="gini-alert-months">
                 <div v-for="(period, i) in alert.last3_periods" :key="period" class="gini-alert-month">
                   <span class="gini-month-label">{{ period }}</span>
-                  <span class="gini-month-value">{{ (alert.last3_values[i] * 100).toFixed(1) }}%</span>
+                  <span class="gini-month-value">{{ Math.round(alert.last3_values[i] * 100) }}</span>
                   <span class="gini-month-diff" :class="alert.direction">
                     {{ alert.direction === 'drop' ? '-' : '+' }}{{ (Math.abs(alert.last3_diffs[i]) * 100).toFixed(1) }}pp
                   </span>

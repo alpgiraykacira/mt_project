@@ -227,7 +227,7 @@ onMounted(loadModels)
             <Column field="gini_current" header="Güncel Gini" sortable style="width: 120px;">
               <template #body="{ data }">
                 <span v-if="data.gini_current != null" style="font-weight: 600;">
-                  {{ (data.gini_current * 100).toFixed(1) }}%
+                  {{ Math.round(data.gini_current * 100) }}
                 </span>
                 <span v-else style="color: #94a3b8;">-</span>
               </template>

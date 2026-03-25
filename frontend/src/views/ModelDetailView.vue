@@ -170,7 +170,7 @@ const chartOptions = {
   maintainAspectRatio: false,
   plugins: { legend: { display: true, position: 'bottom' } },
   scales: {
-    y: { min: 0, max: 1, ticks: { callback: v => (v * 100).toFixed(0) + '%' } },
+    y: { min: 0, max: 1, ticks: { callback: v => Math.round(v * 100) } },
   },
 }
 
@@ -278,7 +278,7 @@ function exportGiniToExcel() {
   const header = ['Dönem', 'Gini', 'Hedef Oranı', 'Örnek Boyutu', 'Notlar']
   const rows = records.map(g => [
     g.period,
-    g.gini_value != null ? (g.gini_value * 100).toFixed(2) + '%' : '',
+    g.gini_value != null ? Math.round(g.gini_value * 100) : '',
     g.target_ratio != null ? (g.target_ratio * 100).toFixed(2) + '%' : '',
     g.sample_size ?? '',
     g.notes ?? '',
@@ -372,31 +372,31 @@ onMounted(loadModel)
         <div class="stat-card info">
           <div class="stat-label">Train Gini</div>
           <div class="stat-value" style="font-size: 1.4rem;">
-            {{ model.gini_train != null ? (model.gini_train * 100).toFixed(1) + '%' : (model.gini_development != null ? (model.gini_development * 100).toFixed(1) + '%' : '-') }}
+            {{ model.gini_train != null ? Math.round(model.gini_train * 100) : (model.gini_development != null ? Math.round(model.gini_development * 100) : '-') }}
           </div>
         </div>
         <div class="stat-card">
           <div class="stat-label">CV Gini</div>
           <div class="stat-value" style="font-size: 1.4rem;">
-            {{ model.gini_cv != null ? (model.gini_cv * 100).toFixed(1) + '%' : (model.gini_validation != null ? (model.gini_validation * 100).toFixed(1) + '%' : '-') }}
+            {{ model.gini_cv != null ? Math.round(model.gini_cv * 100) : (model.gini_validation != null ? Math.round(model.gini_validation * 100) : '-') }}
           </div>
         </div>
         <div class="stat-card">
           <div class="stat-label">ITT Gini</div>
           <div class="stat-value" style="font-size: 1.4rem;">
-            {{ model.gini_itt != null ? (model.gini_itt * 100).toFixed(1) + '%' : '-' }}
+            {{ model.gini_itt != null ? Math.round(model.gini_itt * 100) : '-' }}
           </div>
         </div>
         <div class="stat-card">
           <div class="stat-label">OOT Gini</div>
           <div class="stat-value" style="font-size: 1.4rem;">
-            {{ model.gini_oot != null ? (model.gini_oot * 100).toFixed(1) + '%' : '-' }}
+            {{ model.gini_oot != null ? Math.round(model.gini_oot * 100) : '-' }}
           </div>
         </div>
         <div class="stat-card warning">
           <div class="stat-label">Güncel Gini</div>
           <div class="stat-value" style="font-size: 1.4rem;">
-            {{ model.gini_current != null ? (model.gini_current * 100).toFixed(1) + '%' : '-' }}
+            {{ model.gini_current != null ? Math.round(model.gini_current * 100) : '-' }}
           </div>
         </div>
       </div>
@@ -482,7 +482,7 @@ onMounted(loadModel)
           <strong>Yeni model geliştirme önerilir:</strong>
           Son 3 ay üst üste izleme Gini'si geliştirme Gini'sinden
           {{ redevelopmentAlert.direction === 'drop' ? 'düştü' : 'yükseldi' }}
-          (maks. sapma: {{ (redevelopmentAlert.maxDiff * 100).toFixed(1) }} puan).
+          (maks. sapma: {{ Math.round(redevelopmentAlert.maxDiff * 100) }} puan).
         </span>
       </div>
 
@@ -658,7 +658,7 @@ onMounted(loadModel)
             >
               <Column field="period" header="Dönem" sortable />
               <Column field="gini_value" header="Gini" sortable>
-                <template #body="{ data }">{{ (data.gini_value * 100).toFixed(2) }}%</template>
+                <template #body="{ data }">{{ Math.round(data.gini_value * 100) }}</template>
               </Column>
               <Column field="target_ratio" header="Hedef Oranı" sortable>
                 <template #body="{ data }">
