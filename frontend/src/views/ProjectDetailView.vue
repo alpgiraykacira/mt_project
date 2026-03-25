@@ -142,13 +142,19 @@ function openTaskDialog(stageId) {
   showTaskDialog.value = true
 }
 
+const savingTask = ref(false)
+
 async function saveTask() {
+  if (savingTask.value) return
+  savingTask.value = true
   try {
     await developmentApi.createTask(taskStageId.value, taskForm.value)
     showTaskDialog.value = false
     await loadProject()
   } catch (err) {
     toast.add({ severity: 'error', summary: 'Hata', life: 3000 })
+  } finally {
+    savingTask.value = false
   }
 }
 
@@ -376,7 +382,7 @@ onMounted(loadProject)
       </div>
       <template #footer>
         <button class="btn btn-secondary" @click="showTaskDialog = false">İptal</button>
-        <button class="btn btn-primary" @click="saveTask" style="margin-left: 8px;">Ekle</button>
+        <button class="btn btn-primary" @click="saveTask" :disabled="savingTask" style="margin-left: 8px;">Ekle</button>
       </template>
     </Dialog>
 
