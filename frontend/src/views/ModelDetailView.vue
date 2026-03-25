@@ -63,8 +63,8 @@ const giniPeriodFrom = ref('')
 const giniPeriodTo = ref('')
 const giniViewMode = ref('monthly')  // 'monthly' | 'quarterly'
 
-const MONTHLY_RE_STR   = /^\d{4}-\d{2}$/
-const QUARTERLY_RE_STR = /^\d{4}-Q\d$/
+const MONTHLY_RE   = /^\d{4}-\d{2}$/
+const QUARTERLY_RE = /^\d{4}-Q\d$/
 
 const lastCompletedMonth = computed(() => {
   const now = new Date()
@@ -92,13 +92,11 @@ const rolloutPercentages = [10, 25, 50, 75, 100]
 const showVarDialog = ref(false)
 const varForm = ref({ variable_name: '', variable_description: '', iv_value: null, importance_rank: null, median_train: null, coefficient: null, woe_bin_count: null, notes: '' })
 
-const _MONTHLY_RE = /^\d{4}-\d{2}$/
-
 // Gini alert hesapla (kategori eşiği ile)
 const redevelopmentAlert = computed(() => {
   if (!model.value?.gini_history?.length || model.value.gini_development == null) return null
   const monthly = [...model.value.gini_history]
-    .filter(g => _MONTHLY_RE.test(g.period))
+    .filter(g => MONTHLY_RE.test(g.period))
     .sort((a, b) => b.period.localeCompare(a.period))
   if (monthly.length < 3) return null
   const last3 = monthly.slice(0, 3)
@@ -116,8 +114,8 @@ const filteredGiniHistory = computed(() => {
     ? lastCompletedMonth.value
     : lastCompletedQuarter.value
   let records = [...model.value.gini_history].filter(g => {
-    if (giniViewMode.value === 'monthly')   return MONTHLY_RE_STR.test(g.period)
-    if (giniViewMode.value === 'quarterly') return QUARTERLY_RE_STR.test(g.period)
+    if (giniViewMode.value === 'monthly')   return MONTHLY_RE.test(g.period)
+    if (giniViewMode.value === 'quarterly') return QUARTERLY_RE.test(g.period)
     return true
   }).filter(g => g.period <= maxPeriod)
   if (giniPeriodFrom.value) records = records.filter(g => g.period >= giniPeriodFrom.value)
@@ -132,8 +130,8 @@ const giniChartData = computed(() => {
     : lastCompletedQuarter.value
   const sorted = [...model.value.gini_history]
     .filter(g => {
-      if (giniViewMode.value === 'monthly')   return MONTHLY_RE_STR.test(g.period)
-      if (giniViewMode.value === 'quarterly') return QUARTERLY_RE_STR.test(g.period)
+      if (giniViewMode.value === 'monthly')   return MONTHLY_RE.test(g.period)
+      if (giniViewMode.value === 'quarterly') return QUARTERLY_RE.test(g.period)
       return true
     })
     .filter(g => g.period <= maxPeriod)

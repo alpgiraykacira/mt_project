@@ -159,10 +159,13 @@ async function saveTask() {
 }
 
 async function toggleTask(task, stageId) {
+  // Optimistic update - toggle immediately for snappy UI
+  task.is_completed = !task.is_completed
   try {
-    await developmentApi.updateTask(stageId, task.id, { is_completed: !task.is_completed })
-    await loadProject()
+    await developmentApi.updateTask(stageId, task.id, { is_completed: task.is_completed })
   } catch (err) {
+    // Revert on failure
+    task.is_completed = !task.is_completed
     toast.add({ severity: 'error', summary: 'Hata', life: 3000 })
   }
 }

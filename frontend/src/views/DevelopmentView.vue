@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import Dialog from 'primevue/dialog'
@@ -43,22 +43,18 @@ function getEmptyForm() {
   }
 }
 
-const filteredProjects = computed(() => {
-  return projects.value.filter(p => {
-    if (filterOwner.value && p.owner !== filterOwner.value) return false
-    if (filterStatus.value && p.status !== filterStatus.value) return false
-    if (filterCategory.value && p.scorecard_category !== filterCategory.value) return false
-    return true
-  })
-})
-
 async function loadProjects() {
   try {
+    const params = {}
+    if (filterOwner.value) params.owner = filterOwner.value
+    if (filterStatus.value) params.status = filterStatus.value
+    if (filterCategory.value) params.scorecard_category = filterCategory.value
     const [projectsRes, ownersRes] = await Promise.all([
-      developmentApi.listProjects(),
+      developmentApi.listProjects(params),
       developmentApi.listOwners(),
     ])
-    projects.value = projectsRes.data
+    const data = Array.isArray(projectsRes.data) ? projectsRes.data : projectsRes.data.items || []
+    projects.value = data
     owners.value = ownersRes.data
   } catch (err) {
     toast.add({ severity: 'error', summary: 'Hata', detail: 'Projeler yüklenemedi', life: 3000 })
@@ -124,6 +120,11 @@ function isOverdue(project) {
   return new Date(project.target_end_date) < new Date()
 }
 
+watch([filterOwner, filterStatus, filterCategory], () => {
+  initialLoading.value = true
+  loadProjects()
+})
+
 onMounted(loadProjects)
 </script>
 
@@ -164,15 +165,12 @@ onMounted(loadProjects)
       </div>
 
       <!-- Project Cards -->
-      <div v-if="filteredProjects.length" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px;">
+      <div v-if="projects.length" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px;">
         <div
-          v-for="project in filteredProjects"
+          v-for="project in projects"
           :key="project.id"
-          class="card"
-          style="cursor: pointer; margin-bottom: 0; transition: box-shadow 0.2s;"
+          class="card project-card"
           @click="viewDetail(project)"
-          @mouseenter="$event.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'"
-          @mouseleave="$event.currentTarget.style.boxShadow = ''"
         >
           <div class="card-header">
             <div>

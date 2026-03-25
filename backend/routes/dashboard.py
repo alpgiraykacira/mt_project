@@ -23,55 +23,33 @@ def get_summary():
     """Dashboard özet istatistikleri - mevcut ve geliştirilen skorkartlar ayrımıyla."""
     from datetime import date
 
-    # Model counts
-    total_models, active_models, under_review = db.session.query(
+    _active_filter = ModelInventory.status.in_(["active", "under_review"])
+
+    # Single query for all model counts
+    total_models, active_models, under_review, basvuru_count, davranis_count, \
+        psi_flag_count, cal_warning, cal_critical = db.session.query(
         func.count(ModelInventory.id),
         func.count(case((ModelInventory.status == "active", 1))),
         func.count(case((ModelInventory.status == "under_review", 1))),
+        func.count(case((_active_filter, case((ModelInventory.scorecard_category == "Başvuru", 1))))),
+        func.count(case((_active_filter, case((ModelInventory.scorecard_category == "Davranış", 1))))),
+        func.count(case((_active_filter, case((ModelInventory.psi_flag == True, 1))))),
+        func.count(case((_active_filter, case((ModelInventory.calibration_status == "warning", 1))))),
+        func.count(case((_active_filter, case((ModelInventory.calibration_status == "critical", 1))))),
     ).one()
 
-    # Başvuru / Davranış ayrımı (mevcut modeller)
-    basvuru_count = ModelInventory.query.filter(
-        ModelInventory.scorecard_category == "Başvuru",
-        ModelInventory.status.in_(["active", "under_review"]),
-    ).count()
-    davranis_count = ModelInventory.query.filter(
-        ModelInventory.scorecard_category == "Davranış",
-        ModelInventory.status.in_(["active", "under_review"]),
-    ).count()
-
-    # Alert counts: PSI flag
-    psi_flag_count = ModelInventory.query.filter(
-        ModelInventory.psi_flag == True,
-        ModelInventory.status.in_(["active", "under_review"]),
-    ).count()
-
-    # Calibration counts
-    cal_warning = ModelInventory.query.filter(
-        ModelInventory.calibration_status == "warning",
-        ModelInventory.status.in_(["active", "under_review"]),
-    ).count()
-    cal_critical = ModelInventory.query.filter(
-        ModelInventory.calibration_status == "critical",
-        ModelInventory.status.in_(["active", "under_review"]),
-    ).count()
-
-    # Development project counts
-    total_projects, active_projects, completed_projects = db.session.query(
+    # Single query for all development counts
+    total_projects, active_projects, completed_projects, dev_basvuru, dev_davranis = db.session.query(
         func.count(DevelopmentProject.id),
         func.count(case((DevelopmentProject.status == "in_progress", 1))),
         func.count(case((DevelopmentProject.status == "completed", 1))),
+        func.count(case((
+            (DevelopmentProject.status == "in_progress") & (DevelopmentProject.scorecard_category == "Başvuru"), 1
+        ))),
+        func.count(case((
+            (DevelopmentProject.status == "in_progress") & (DevelopmentProject.scorecard_category == "Davranış"), 1
+        ))),
     ).one()
-
-    # Geliştirilen: Başvuru / Davranış ayrımı
-    dev_basvuru = DevelopmentProject.query.filter(
-        DevelopmentProject.scorecard_category == "Başvuru",
-        DevelopmentProject.status == "in_progress",
-    ).count()
-    dev_davranis = DevelopmentProject.query.filter(
-        DevelopmentProject.scorecard_category == "Davranış",
-        DevelopmentProject.status == "in_progress",
-    ).count()
 
     overdue_stages = DevelopmentStage.query.filter(
         DevelopmentStage.deadline < date.today(),
@@ -160,7 +138,7 @@ def gini_alerts():
     """
     Gini alert sistemi:
     - Başvuru modelleri: güncel gini < 0.50 VEYA son 3 ayda ≥5pp ardışık sapma
-    - Davranış modelleri: güncel gini < 0.70 VEYA son 3 ayda ≥5pp ardışık sapma
+    - Davranış modelleri: güncel gini < 0.55 VEYA son 3 ayda ≥5pp ardışık sapma
     - PSI flag bağımsız olarak ayrıca dönülür.
     """
     models = ModelInventory.query.options(

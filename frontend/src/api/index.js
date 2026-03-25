@@ -34,8 +34,14 @@ function cachedGet(url) {
   })
 }
 
-export function invalidateDashboardCache() {
-  _cache.clear()
+export function invalidateCache(prefix) {
+  if (!prefix) {
+    _cache.clear()
+    return
+  }
+  for (const key of _cache.keys()) {
+    if (key.startsWith(prefix)) _cache.delete(key)
+  }
 }
 
 // ── Dashboard ──
@@ -50,9 +56,9 @@ export const dashboardApi = {
 export const modelsApi = {
   list: (params) => api.get('/models/', { params }),
   get: (id) => api.get(`/models/${id}`),
-  create: (data) => api.post('/models/', data),
-  update: (id, data) => api.put(`/models/${id}`, data),
-  delete: (id) => api.delete(`/models/${id}`),
+  create: (data) => api.post('/models/', data).then(r => { invalidateCache('/dashboard'); return r }),
+  update: (id, data) => api.put(`/models/${id}`, data).then(r => { invalidateCache('/dashboard'); return r }),
+  delete: (id) => api.delete(`/models/${id}`).then(r => { invalidateCache('/dashboard'); return r }),
 
   // Technical Guide
   listTechnical: (modelId) => api.get(`/models/${modelId}/technical`),
@@ -90,9 +96,9 @@ export const modelsApi = {
 export const developmentApi = {
   listProjects: (params) => api.get('/development/projects', { params }),
   getProject: (id) => api.get(`/development/projects/${id}`),
-  createProject: (data) => api.post('/development/projects', data),
-  updateProject: (id, data) => api.put(`/development/projects/${id}`, data),
-  deleteProject: (id) => api.delete(`/development/projects/${id}`),
+  createProject: (data) => api.post('/development/projects', data).then(r => { invalidateCache('/dashboard'); return r }),
+  updateProject: (id, data) => api.put(`/development/projects/${id}`, data).then(r => { invalidateCache('/dashboard'); return r }),
+  deleteProject: (id) => api.delete(`/development/projects/${id}`).then(r => { invalidateCache('/dashboard'); return r }),
 
   // Stages
   createStage: (projectId, data) => api.post(`/development/projects/${projectId}/stages`, data),

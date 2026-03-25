@@ -169,6 +169,7 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   border: 1px solid #e2e8f0;
   margin-bottom: 24px;
+  transition: box-shadow 0.2s ease;
 }
 
 .card-header {
@@ -435,4 +436,37 @@ body {
 }
 .gini-redevelopment-alert strong {
   color: #991b1b;
+}
+
+/* Smooth page content fade-in */
+.page-body {
+  animation: fadeIn 0.15s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* DataTable row hover smoothness */
+.data-table-wrapper .p-datatable .p-datatable-tbody > tr {
+  transition: background-color 0.15s ease;
+}
+
+/* Stat card hover lift */
+.stat-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.stat-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Project card hover effect */
+.project-card {
+  cursor: pointer;
+  margin-bottom: 0;
+}
+.project-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
