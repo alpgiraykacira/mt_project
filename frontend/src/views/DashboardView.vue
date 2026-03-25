@@ -61,6 +61,11 @@ const redFlags = computed(() => giniAlerts.value.filter(a => a.gini_alert).lengt
 const yellowFlags = computed(() => giniAlerts.value.filter(a => !a.gini_alert && a.psi_flag).length)
 const greenFlags = computed(() => (summary.value.models?.active || 0) - redFlags.value - yellowFlags.value)
 
+// Calibration indicator counts
+const calRedFlags = computed(() => summary.value.models?.cal_critical || 0)
+const calYellowFlags = computed(() => summary.value.models?.cal_warning || 0)
+const calGreenFlags = computed(() => (summary.value.models?.active || 0) - calRedFlags.value - calYellowFlags.value)
+
 // Gini segment helpers
 function modelAlert(modelId) { return alertByModelId.value[modelId] || null }
 
@@ -112,34 +117,31 @@ onMounted(async () => {
         <!-- 2. Discriminatory Power Alert -->
         <div class="stat-card info">
           <div class="stat-label" style="text-transform: none;">Discriminatory Power Alert</div>
-          <div class="stat-detail" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
-            <span style="font-size: 0.75rem; background: #dcfce7; color: #166534; padding: 2px 10px; border-radius: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
-              <i class="pi pi-circle-fill" style="font-size: 0.45rem; color: #22c55e;"></i> {{ greenFlags }}
+          <div class="stat-detail" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px;">
+            <span style="font-size: 1rem; background: #dcfce7; color: #166534; padding: 6px 16px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="pi pi-circle-fill" style="font-size: 0.6rem; color: #22c55e;"></i> {{ greenFlags }}
             </span>
-            <span style="font-size: 0.75rem; background: #fef3c7; color: #92400e; padding: 2px 10px; border-radius: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
-              <i class="pi pi-circle-fill" style="font-size: 0.45rem; color: #f59e0b;"></i> {{ yellowFlags }}
+            <span style="font-size: 1rem; background: #fef3c7; color: #92400e; padding: 6px 16px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="pi pi-circle-fill" style="font-size: 0.6rem; color: #f59e0b;"></i> {{ yellowFlags }}
             </span>
-            <span style="font-size: 0.75rem; background: #fee2e2; color: #b91c1c; padding: 2px 10px; border-radius: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
-              <i class="pi pi-circle-fill" style="font-size: 0.45rem; color: #ef4444;"></i> {{ redFlags }}
+            <span style="font-size: 1rem; background: #fee2e2; color: #b91c1c; padding: 6px 16px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="pi pi-circle-fill" style="font-size: 0.6rem; color: #ef4444;"></i> {{ redFlags }}
             </span>
           </div>
         </div>
 
         <!-- 3. Calibration Alert -->
-        <div class="stat-card" :style="severityCard(calSeverity)">
-          <div class="stat-label" style="display: flex; align-items: center; gap: 5px;">
-            <i :class="severityIcon(calSeverity).icon" :style="{ color: severityIcon(calSeverity).color, fontSize: '0.85rem' }"></i>
-            Calibration Alert
-          </div>
-          <div class="stat-value" :style="{ color: severityTextColor(calSeverity), fontSize: '1.1rem', fontWeight: 700 }">
-            {{ severityLabel(calSeverity) }}
-          </div>
-          <div class="stat-detail" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
-            <span v-if="summary.models?.cal_critical" style="font-size: 0.7rem; background: #fee2e2; color: #b91c1c; padding: 1px 6px; border-radius: 10px;">
-              {{ summary.models.cal_critical }} kritik
+        <div class="stat-card info">
+          <div class="stat-label" style="text-transform: none;">Calibration Alert</div>
+          <div class="stat-detail" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px;">
+            <span style="font-size: 1rem; background: #dcfce7; color: #166534; padding: 6px 16px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="pi pi-circle-fill" style="font-size: 0.6rem; color: #22c55e;"></i> {{ calGreenFlags }}
             </span>
-            <span v-if="summary.models?.cal_warning" style="font-size: 0.7rem; background: #fef3c7; color: #92400e; padding: 1px 6px; border-radius: 10px;">
-              {{ summary.models.cal_warning }} takip
+            <span style="font-size: 1rem; background: #fef3c7; color: #92400e; padding: 6px 16px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="pi pi-circle-fill" style="font-size: 0.6rem; color: #f59e0b;"></i> {{ calYellowFlags }}
+            </span>
+            <span style="font-size: 1rem; background: #fee2e2; color: #b91c1c; padding: 6px 16px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="pi pi-circle-fill" style="font-size: 0.6rem; color: #ef4444;"></i> {{ calRedFlags }}
             </span>
           </div>
         </div>
