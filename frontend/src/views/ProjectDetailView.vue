@@ -18,6 +18,10 @@ const projectId = computed(() => Number(route.params.id))
 const project = ref(null)
 const initialLoading = ref(true)
 
+// Stage dialog
+const showStageDialog = ref(false)
+const stageForm = ref({ stage_name: '', stage_code: '', description: '', deadline: null, notes: '', parent_id: null })
+
 // Task dialog
 const showTaskDialog = ref(false)
 const taskStageId = ref(null)
@@ -96,6 +100,27 @@ async function saveProject() {
     await developmentApi.updateProject(projectId.value, data)
     showEditDialog.value = false
     toast.add({ severity: 'success', summary: 'Güncellendi', life: 3000 })
+    await loadProject()
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Hata', life: 3000 })
+  }
+}
+
+function openStageDialog(parentId = null) {
+  stageForm.value = { stage_name: '', stage_code: '', description: '', deadline: null, notes: '', parent_id: parentId }
+  showStageDialog.value = true
+}
+
+async function saveStage() {
+  try {
+    const data = {
+      ...stageForm.value,
+      deadline: stageForm.value.deadline
+        ? stageForm.value.deadline.toISOString().split('T')[0] : null,
+    }
+    await developmentApi.createStage(projectId.value, data)
+    showStageDialog.value = false
+    toast.add({ severity: 'success', summary: 'Aşama eklendi', life: 3000 })
     await loadProject()
   } catch (err) {
     toast.add({ severity: 'error', summary: 'Hata', life: 3000 })
@@ -289,6 +314,9 @@ onMounted(loadProject)
                     :options="stageStatusOptions"
                     style="width: 140px; font-size: 0.8rem;"
                   />
+                  <button class="btn btn-sm btn-icon" style="background: none; color: #3b82f6; padding: 4px;" @click="openStageDialog(stage.id)" title="Alt aşama ekle">
+                    <i class="pi pi-plus" style="font-size: 0.7rem;"></i>
+                  </button>
                   <button class="btn btn-danger btn-sm btn-icon" @click="deleteStage(stage)">
                     <i class="pi pi-trash"></i>
                   </button>
@@ -324,6 +352,36 @@ onMounted(loadProject)
         </div>
       </div>
     </div>
+
+    <!-- Add Stage Dialog -->
+    <Dialog v-model:visible="showStageDialog" header="Yeni Aşama Ekle" modal :style="{ width: '500px' }">
+      <div class="form-grid" style="padding: 12px 0;">
+        <div class="form-group">
+          <label>Aşama Kodu</label>
+          <InputText v-model="stageForm.stage_code" placeholder="örn: 3.1.2" />
+        </div>
+        <div class="form-group">
+          <label>Aşama Adı *</label>
+          <InputText v-model="stageForm.stage_name" />
+        </div>
+        <div class="form-group full-width">
+          <label>Açıklama</label>
+          <Textarea v-model="stageForm.description" rows="2" />
+        </div>
+        <div class="form-group">
+          <label>Deadline</label>
+          <DatePicker v-model="stageForm.deadline" dateFormat="yy-mm-dd" />
+        </div>
+        <div class="form-group full-width">
+          <label>Notlar (yapılanlar/yapılacaklar)</label>
+          <Textarea v-model="stageForm.notes" rows="3" />
+        </div>
+      </div>
+      <template #footer>
+        <button class="btn btn-secondary" @click="showStageDialog = false">İptal</button>
+        <button class="btn btn-primary" @click="saveStage" style="margin-left: 8px;">Ekle</button>
+      </template>
+    </Dialog>
 
     <!-- Add Task Dialog -->
     <Dialog v-model:visible="showTaskDialog" header="Görev Ekle" modal :style="{ width: '400px' }">
