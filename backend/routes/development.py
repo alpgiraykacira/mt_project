@@ -132,14 +132,24 @@ def delete_project(project_id):
 def create_stage(project_id):
     db.get_or_404(DevelopmentProject, project_id)
     data = request.get_json()
+    parent_id = data.get("parent_id")
+    if "order_index" in data:
+        order_index = data["order_index"]
+    else:
+        max_idx = db.session.query(db.func.coalesce(db.func.max(DevelopmentStage.order_index), -1)).filter(
+            DevelopmentStage.project_id == project_id,
+            DevelopmentStage.parent_id == parent_id,
+        ).scalar()
+        order_index = max_idx + 1
+
     stage = DevelopmentStage(
         project_id=project_id,
-        parent_id=data.get("parent_id"),
+        parent_id=parent_id,
         stage_code=data.get("stage_code"),
         stage_name=data["stage_name"],
         description=data.get("description"),
         status=data.get("status", "pending"),
-        order_index=data.get("order_index", 0),
+        order_index=order_index,
         deadline=_parse_date(data.get("deadline")),
         notes=data.get("notes"),
     )
