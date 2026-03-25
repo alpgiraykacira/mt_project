@@ -14,3 +14,14 @@ services:
         value: https://mt-project-lnq7.onrender.com
       - key: PYTHON_VERSION
         value: 3.11.0
+
+  - type: web
+    name: mt-project
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

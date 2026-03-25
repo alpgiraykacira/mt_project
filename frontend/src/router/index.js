@@ -31,6 +31,10 @@ const routes = [
     component: () => import('../views/ProjectDetailView.vue'),
     meta: { title: 'Proje Detay' },
   },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/',
+  },
 ]
 
 const router = createRouter({
