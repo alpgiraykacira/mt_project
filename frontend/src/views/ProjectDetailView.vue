@@ -41,7 +41,7 @@ const stageStatusOptions = [
   { label: 'Bekliyor', value: 'pending' },
   { label: 'Devam Ediyor', value: 'in_progress' },
   { label: 'Tamamlandı', value: 'completed' },
-  { label: 'Engelli', value: 'blocked' },
+  { label: 'Bloke', value: 'blocked' },
 ]
 const priorityOptions = [
   { label: 'Düşük', value: 'low' },
@@ -209,7 +209,7 @@ async function deleteTask(task, stageId) {
 const statusLabel = {
   in_progress: 'Devam Ediyor', completed: 'Tamamlandı',
   on_hold: 'Beklemede', cancelled: 'İptal',
-  pending: 'Bekliyor', blocked: 'Engelli',
+  pending: 'Bekliyor', blocked: 'Bloke',
 }
 
 const statusIcon = {
