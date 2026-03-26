@@ -110,12 +110,12 @@ onMounted(async () => {
     <div class="page-header"><h2>Dashboard</h2></div>
     <div class="page-body">
 
-      <!-- ══ Mevcut Skorkartlar ══ -->
-      <div style="margin-bottom: 8px; font-size: 0.75rem; text-transform: capitalize; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em;">Mevcut Skorkartlar</div>
-      <div class="stats-grid" style="margin-bottom: 32px;">
+      <!-- ══ Skorkartlar ══ -->
+      <div class="stats-grid stats-grid-5" style="margin-bottom: 32px;">
 
-        <!-- 1. Aktif Model Sayısı -->
+        <!-- Mevcut: 1. Aktif Model Sayısı -->
         <div class="stat-card info">
+          <div class="stat-group-label">Mevcut</div>
           <div class="stat-label">Aktif Model</div>
           <div class="stat-value">{{ summary.models?.active || 0 }}</div>
           <div class="stat-detail">
@@ -125,9 +125,10 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- 2. Discriminatory Power Alert -->
+        <!-- Mevcut: 2. Discriminatory Power Alert -->
         <div class="stat-card info">
-          <div class="stat-label" >Discriminatory Power Alert</div>
+          <div class="stat-group-label">Mevcut</div>
+          <div class="stat-label">Discriminatory Power Alert</div>
           <div class="stat-detail" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px;">
             <span style="font-size: 1rem; background: #dcfce7; color: #166534; padding: 6px 16px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
               <i class="pi pi-circle-fill" style="font-size: 0.6rem; color: #22c55e;"></i> {{ greenFlags }}
@@ -141,9 +142,10 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- 3. Calibration Alert -->
+        <!-- Mevcut: 3. Calibration Alert -->
         <div class="stat-card info">
-          <div class="stat-label" >Calibration Alert</div>
+          <div class="stat-group-label">Mevcut</div>
+          <div class="stat-label">Calibration Alert</div>
           <div class="stat-detail" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px;">
             <span style="font-size: 1rem; background: #dcfce7; color: #166534; padding: 6px 16px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
               <i class="pi pi-circle-fill" style="font-size: 0.6rem; color: #22c55e;"></i> {{ calGreenFlags }}
@@ -157,12 +159,9 @@ onMounted(async () => {
           </div>
         </div>
 
-      </div>
-
-      <!-- ══ Geliştirilen Skorkartlar ══ -->
-      <div style="margin-bottom: 8px; font-size: 0.75rem; text-transform: capitalize; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em;">Geliştirilen Skorkartlar</div>
-      <div class="stats-grid" style="margin-bottom: 32px;">
+        <!-- Geliştirilen: 4. Aktif Projeler -->
         <div class="stat-card success">
+          <div class="stat-group-label">Geliştirilen</div>
           <div class="stat-label">Aktif Projeler</div>
           <div class="stat-value">{{ summary.development?.active_projects || 0 }}</div>
           <div class="stat-detail">
@@ -171,10 +170,14 @@ onMounted(async () => {
             <span style="color: #10b981;">{{ summary.development?.dev_davranis || 0 }} Davranış</span>
           </div>
         </div>
+
+        <!-- Geliştirilen: 5. Geciken Aşamalar -->
         <div class="stat-card danger">
+          <div class="stat-group-label">Geliştirilen</div>
           <div class="stat-label">Geciken Aşamalar</div>
           <div class="stat-value">{{ summary.development?.overdue_stages || 0 }}</div>
         </div>
+
       </div>
 
       <!-- ══ Discriminatory Power İzleme ══ -->
