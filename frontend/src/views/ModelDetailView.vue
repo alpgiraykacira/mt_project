@@ -58,7 +58,7 @@ const reportTypeLabel = { incoming: 'Gelen', outgoing: 'Giden', wiseminer: 'Wise
 
 // Gini History
 const showGiniDialog = ref(false)
-const giniForm = ref({ period: '', gini_value: null, target_ratio: null, sample_size: null, notes: '' })
+const giniForm = ref({ period: '', gini_value: null, sample_size: null, notes: '' })
 const giniPeriodFrom = ref('')
 const giniPeriodTo = ref('')
 const giniViewMode = ref('monthly')  // 'monthly' | 'quarterly'
@@ -273,11 +273,10 @@ function exportGiniToExcel() {
   const records = filteredGiniHistory.value
   if (!records.length) return
 
-  const header = ['Dönem', 'Gini', 'Hedef Oranı', 'Örnek Boyutu', 'Notlar']
+  const header = ['Dönem', 'Gini', 'Örnek Boyutu', 'Notlar']
   const rows = records.map(g => [
     g.period,
     g.gini_value != null ? Math.round(g.gini_value * 100) : '',
-    g.target_ratio != null ? (g.target_ratio * 100).toFixed(2) + '%' : '',
     g.sample_size ?? '',
     g.notes ?? '',
   ])
@@ -640,7 +639,7 @@ onMounted(loadModel)
             <button class="btn btn-secondary btn-sm" @click="exportGiniToExcel" :disabled="!filteredGiniHistory.length">
               <i class="pi pi-file-excel"></i> Excel'e Aktar
             </button>
-            <button class="btn btn-primary btn-sm" @click="giniForm = { period: '', gini_value: null, target_ratio: null, sample_size: null, notes: '' }; showGiniDialog = true" style="margin-left: auto;">
+            <button class="btn btn-primary btn-sm" @click="giniForm = { period: '', gini_value: null, sample_size: null, notes: '' }; showGiniDialog = true" style="margin-left: auto;">
               <i class="pi pi-plus"></i> Kayıt Ekle
             </button>
           </div>
@@ -657,11 +656,6 @@ onMounted(loadModel)
               <Column field="period" header="Dönem" sortable />
               <Column field="gini_value" header="Gini" sortable>
                 <template #body="{ data }">{{ Math.round(data.gini_value * 100) }}</template>
-              </Column>
-              <Column field="target_ratio" header="Hedef Oranı" sortable>
-                <template #body="{ data }">
-                  {{ data.target_ratio != null ? (data.target_ratio * 100).toFixed(2) + '%' : '-' }}
-                </template>
               </Column>
               <Column field="sample_size" header="Örnek Boyutu" />
               <Column field="notes" header="Notlar" />
@@ -785,10 +779,6 @@ onMounted(loadModel)
         <div class="form-group">
           <label>Gini Değeri *</label>
           <InputNumber v-model="giniForm.gini_value" :minFractionDigits="2" :maxFractionDigits="4" :min="0" :max="1" />
-        </div>
-        <div class="form-group">
-          <label>Hedef Oranı</label>
-          <InputNumber v-model="giniForm.target_ratio" :minFractionDigits="2" :maxFractionDigits="4" :min="0" :max="1" />
         </div>
         <div class="form-group">
           <label>Örnek Boyutu</label>

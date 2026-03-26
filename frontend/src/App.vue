@@ -9,16 +9,24 @@ const navItems = [
 ]
 
 const sidebarOpen = ref(false)
+const sidebarCollapsed = ref(false)
 </script>
 
 <template>
   <Toast />
   <div class="app-layout">
     <!-- Sidebar -->
-    <aside class="sidebar" :class="{ open: sidebarOpen }">
+    <aside class="sidebar" :class="{ open: sidebarOpen, collapsed: sidebarCollapsed }">
+      <button
+        class="sidebar-collapse-btn"
+        @click="sidebarCollapsed = !sidebarCollapsed"
+        :title="sidebarCollapsed ? 'Kenar çubuğunu aç' : 'Kenar çubuğunu kapat'"
+      >
+        <i :class="sidebarCollapsed ? 'pi pi-angle-right' : 'pi pi-angle-left'" />
+      </button>
       <div class="sidebar-header">
-        <h1>MT Dashboard</h1>
-        <p>Skorkart Yönetim Platformu</p>
+        <h1 v-show="!sidebarCollapsed">MT Dashboard</h1>
+        <p v-show="!sidebarCollapsed">Skorkart Yönetim Platformu</p>
       </div>
       <nav class="sidebar-nav">
         <router-link
@@ -29,15 +37,16 @@ const sidebarOpen = ref(false)
           @click="sidebarOpen = false"
           active-class=""
           :class="{ active: $route.path === item.path || (item.path !== '/' && $route.path.startsWith(item.path)) }"
+          :title="sidebarCollapsed ? item.label : ''"
         >
           <i :class="item.icon"></i>
-          {{ item.label }}
+          <span v-show="!sidebarCollapsed">{{ item.label }}</span>
         </router-link>
       </nav>
     </aside>
 
     <!-- Main Content -->
-    <main class="main-content">
+    <main class="main-content" :class="{ 'sidebar-is-collapsed': sidebarCollapsed }">
       <router-view />
     </main>
   </div>
