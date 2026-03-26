@@ -269,7 +269,7 @@ body {
   border-radius: 4px;
   font-size: 0.7rem;
   font-weight: 700;
-  text-transform: uppercase;
+  text-transform: capitalize;
 }
 
 .priority-badge.critical { background: #fee2e2; color: #991b1b; }
