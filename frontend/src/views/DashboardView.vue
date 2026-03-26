@@ -111,7 +111,7 @@ onMounted(async () => {
     <div class="page-body">
 
       <!-- ══ Mevcut Skorkartlar ══ -->
-      <div style="margin-bottom: 8px; font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em;">Mevcut Skorkartlar</div>
+      <div style="margin-bottom: 8px; font-size: 0.75rem; text-transform: capitalize; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em;">Mevcut Skorkartlar</div>
       <div class="stats-grid" style="margin-bottom: 32px;">
 
         <!-- 1. Aktif Model Sayısı -->
@@ -127,7 +127,7 @@ onMounted(async () => {
 
         <!-- 2. Discriminatory Power Alert -->
         <div class="stat-card info">
-          <div class="stat-label" style="text-transform: none;">Discriminatory Power Alert</div>
+          <div class="stat-label" >Discriminatory Power Alert</div>
           <div class="stat-detail" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px;">
             <span style="font-size: 1rem; background: #dcfce7; color: #166534; padding: 6px 16px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
               <i class="pi pi-circle-fill" style="font-size: 0.6rem; color: #22c55e;"></i> {{ greenFlags }}
@@ -143,7 +143,7 @@ onMounted(async () => {
 
         <!-- 3. Calibration Alert -->
         <div class="stat-card info">
-          <div class="stat-label" style="text-transform: none;">Calibration Alert</div>
+          <div class="stat-label" >Calibration Alert</div>
           <div class="stat-detail" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px;">
             <span style="font-size: 1rem; background: #dcfce7; color: #166534; padding: 6px 16px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
               <i class="pi pi-circle-fill" style="font-size: 0.6rem; color: #22c55e;"></i> {{ calGreenFlags }}
@@ -160,7 +160,7 @@ onMounted(async () => {
       </div>
 
       <!-- ══ Geliştirilen Skorkartlar ══ -->
-      <div style="margin-bottom: 8px; font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em;">Geliştirilen Skorkartlar</div>
+      <div style="margin-bottom: 8px; font-size: 0.75rem; text-transform: capitalize; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em;">Geliştirilen Skorkartlar</div>
       <div class="stats-grid" style="margin-bottom: 32px;">
         <div class="stat-card success">
           <div class="stat-label">Aktif Projeler</div>
@@ -189,7 +189,7 @@ onMounted(async () => {
 
           <!-- Başvuru segment -->
           <div>
-            <div style="font-size: 0.72rem; text-transform: uppercase; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 10px;">
+            <div style="font-size: 0.72rem; text-transform: capitalize; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 10px;">
               Başvuru
             </div>
             <div v-if="(giniData.basvuru || []).length" style="display: flex; flex-direction: column; gap: 8px;">
@@ -227,7 +227,7 @@ onMounted(async () => {
 
           <!-- Davranış segment -->
           <div>
-            <div style="font-size: 0.72rem; text-transform: uppercase; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 10px;">
+            <div style="font-size: 0.72rem; text-transform: capitalize; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 10px;">
               Davranış
             </div>
             <div v-if="(giniData.davranis || []).length" style="display: flex; flex-direction: column; gap: 8px;">
@@ -267,7 +267,7 @@ onMounted(async () => {
 
         <!-- ── Discriminatory Power Alert Detayları ── -->
         <div v-if="giniAlertList.length" style="border-top: 1px solid #f1f5f9; margin-top: 16px; padding: 16px 20px 20px 20px;">
-          <div style="font-size: 0.72rem; text-transform: uppercase; color: #ef4444; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+          <div style="font-size: 0.72rem; text-transform: capitalize; color: #ef4444; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
             <i class="pi pi-exclamation-triangle"></i> Discriminatory Power Alert Detayları
           </div>
           <div style="max-height: 320px; overflow-y: auto;">
@@ -322,7 +322,7 @@ onMounted(async () => {
 
         <!-- ── Calibration Alert Detayları ── -->
         <div v-if="calAlertModels.length" style="border-top: 1px solid #f1f5f9; margin-top: 16px; padding: 16px 20px 20px 20px;">
-          <div style="font-size: 0.72rem; text-transform: uppercase; color: #d97706; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+          <div style="font-size: 0.72rem; text-transform: capitalize; color: #d97706; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
             <i class="pi pi-exclamation-triangle"></i> Calibration Alert Detayları
           </div>
           <div style="max-height: 320px; overflow-y: auto;">
