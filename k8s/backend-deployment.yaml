@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mt-backend
+  labels:
+    app: mt-dashboard
+    component: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mt-dashboard
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: mt-dashboard
+        component: backend
+    spec:
+      containers:
+        - name: mt-backend
+          # BuildConfig tarafından otomatik set edilir
+          image: mt-backend:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: mt-dashboard-config
+            - secretRef:
+                name: mt-dashboard-secrets
+          # /health endpoint'i zaten var — probe olarak kullan
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

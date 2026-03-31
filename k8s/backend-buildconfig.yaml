@@ -1,0 +1,30 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: mt-backend
+  labels:
+    app: mt-dashboard
+    component: backend
+spec:
+  source:
+    type: Binary
+    # "oc start-build mt-backend --from-dir=./backend" ile kod gönderilir
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: mt-backend:latest
+  triggers:
+    # Image build bitince deployment otomatik tetiklenir
+    - type: ConfigChange
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: mt-backend
+  labels:
+    app: mt-dashboard
+    component: backend
