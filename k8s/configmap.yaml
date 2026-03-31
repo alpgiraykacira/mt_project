@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mt-dashboard-config
+  labels:
+    app: mt-dashboard
+data:
+  # SQLite (geçici — Oracle'a geçince DATABASE_URL secret'a taşınacak)
+  DATABASE_URL: "sqlite:///dev.db"
+  CORS_ORIGINS: "http://mt-frontend-service:8081"
+  SQL_DEBUG: "false"
+  SEED_ON_EMPTY: "true"

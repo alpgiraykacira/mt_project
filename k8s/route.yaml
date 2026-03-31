@@ -1,0 +1,33 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: mt-dashboard-frontend
+  labels:
+    app: mt-dashboard
+spec:
+  # Şirketin vereceği hostname
+  # host: mt-dashboard.apps.sirket.com
+  to:
+    kind: Service
+    name: mt-frontend-service
+  port:
+    targetPort: 8081
+  tls:
+    termination: edge
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: mt-dashboard-backend
+  labels:
+    app: mt-dashboard
+spec:
+  # host: mt-dashboard-api.apps.sirket.com
+  path: /api
+  to:
+    kind: Service
+    name: mt-backend-service
+  port:
+    targetPort: 8080
+  tls:
+    termination: edge

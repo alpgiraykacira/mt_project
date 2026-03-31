@@ -44,10 +44,12 @@ def create_app():
         import models.development  # noqa: F401
         db.create_all()
 
-        from models.scorecard import ModelInventory
-        if ModelInventory.query.count() == 0:
-            from seed_data import seed_db
-            seed_db()
+        # Production'da seed istemezsin — SEED_ON_EMPTY=true ile kontrol et
+        if os.getenv("SEED_ON_EMPTY", "true").lower() == "true":
+            from models.scorecard import ModelInventory
+            if ModelInventory.query.count() == 0:
+                from seed_data import seed_db
+                seed_db()
 
     return app
 
@@ -56,4 +58,4 @@ app = create_app()
 
 if __name__ == "__main__":
     # host=0.0.0.0 -> container/pod icinden proxy erisimi icin gerekli
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))

@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mt-frontend
+  labels:
+    app: mt-dashboard
+    component: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mt-dashboard
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: mt-dashboard
+        component: frontend
+    spec:
+      containers:
+        - name: mt-frontend
+          # Şirket registry adresini buraya yaz
+          image: IMAGE_REGISTRY/mt-dashboard/frontend:latest
+          ports:
+            - containerPort: 8081
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
