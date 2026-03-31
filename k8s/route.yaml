@@ -5,8 +5,8 @@ metadata:
   labels:
     app: mt-dashboard
 spec:
-  # Şirketin vereceği hostname
-  # host: mt-dashboard.apps.sirket.com
+  # host alanı boş bırakılırsa OpenShift otomatik URL atar:
+  # mt-dashboard-frontend-<namespace>.apps.<cluster-domain>
   to:
     kind: Service
     name: mt-frontend-service
@@ -22,8 +22,8 @@ metadata:
   labels:
     app: mt-dashboard
 spec:
-  # host: mt-dashboard-api.apps.sirket.com
-  path: /api
+  # OpenShift otomatik URL atar:
+  # mt-dashboard-backend-<namespace>.apps.<cluster-domain>
   to:
     kind: Service
     name: mt-backend-service

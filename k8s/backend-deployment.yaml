@@ -19,8 +19,8 @@ spec:
     spec:
       containers:
         - name: mt-backend
-          # Şirket registry adresini buraya yaz
-          image: IMAGE_REGISTRY/mt-dashboard/backend:latest
+          # BuildConfig tarafından otomatik set edilir
+          image: mt-backend:latest
           ports:
             - containerPort: 8080
           envFrom:

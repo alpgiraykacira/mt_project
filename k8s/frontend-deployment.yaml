@@ -19,8 +19,8 @@ spec:
     spec:
       containers:
         - name: mt-frontend
-          # Şirket registry adresini buraya yaz
-          image: IMAGE_REGISTRY/mt-dashboard/frontend:latest
+          # BuildConfig tarafından otomatik set edilir
+          image: mt-frontend:latest
           ports:
             - containerPort: 8081
           resources:
