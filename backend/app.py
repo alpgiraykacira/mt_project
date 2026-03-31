@@ -11,11 +11,11 @@ def create_app():
     app.config.from_object(Config)
 
     # CORS - configurable via CORS_ORIGINS env variable
-    cors_origins = os.getenv(
-        "CORS_ORIGINS",
-        "https://mt-project-lnq7.onrender.com"
-    ).split(",")
-    CORS(app, origins=cors_origins)
+    cors_origins = os.getenv("CORS_ORIGINS", "*")
+    if cors_origins == "*":
+        CORS(app)
+    else:
+        CORS(app, origins=cors_origins.split(","))
 
     Compress(app)
     db.init_app(app)
