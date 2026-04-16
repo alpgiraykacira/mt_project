@@ -1,6 +1,6 @@
 # Proje Konusu
 
-**Proje Adı:** Model Envanteri ve Skorkart Geliştirme Süreçlerinin Dijitalleştirilmesi
+**Proje Adı:** ModelHub - Model Envanteri ve Skorkart Geliştirme Süreçlerinin Dijitalleştirilmesi
 
 **Proje Mentoru:** Ad Soyad
 

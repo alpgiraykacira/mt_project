@@ -1,4 +1,4 @@
-# MT Dashboard - Skorkart Yönetim Platformu
+# ModelHub - Skorkart Yönetim Platformu
 
 Model envanteri yönetimi ve skorkart geliştirme süreçlerinin takibi için interaktif dashboard.
 
