@@ -17,10 +17,10 @@ Banka bünyesinde kullanılan kredi skorlama modellerinin envanter yönetimi, ge
 
 ## Yapılacaklar
 
-- Backend (Flask + SQLAlchemy) ve Frontend (Vue 3 + PrimeVue) mimarisinde full-stack web uygulaması geliştirilecek
-- Model envanteri, Gini geçmişi, teknik kılavuz ve validasyon raporları modülleri oluşturulacak
+- Tüm modellerin tek bir ekrandan görüntülenebileceği bir envanter modülü oluşturulacak
+- Model performans skorlarının geçmişe dönük trend grafikleriyle izlenebileceği bir yapı kurulacak
 - Skorkart geliştirme projeleri için aşama bazlı görev yönetimi ve deadline takip sistemi kurulacak
-- Oracle DB entegrasyonu ile kurumsal veritabanı altyapısına uyumlu hale getirilecek
+- Teknik kılavuz ve validasyon raporlarının merkezi olarak erişilebileceği bir doküman modülü oluşturulacak
 
 ## Fırsatlar
 
