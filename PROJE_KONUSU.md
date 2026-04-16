@@ -1,6 +1,6 @@
 # Proje Konusu
 
-**Proje Adı:** ModelHub - Model Envanteri ve Skorkart Geliştirme Süreçlerinin Dijitalleştirilmesi
+**Proje Adı:** BMG Dashboard - Model Envanteri ve Skorkart Geliştirme Süreçlerinin Dijitalleştirilmesi
 
 **Proje Mentoru:** Ad Soyad
 
